@@ -17,9 +17,6 @@ export function HomeView({ lang }: { lang: Language }) {
     <SiteShell lang={lang} active="home">
       <section className="mx-auto grid w-full max-w-6xl gap-12 px-5 pb-20 pt-16 sm:px-8 sm:pt-24 lg:grid-cols-[1.25fr_.75fr] lg:items-end lg:gap-20 lg:pb-28">
         <div>
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/5 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-emerald-200/80">
-            <span className="size-2 rounded-full bg-emerald-300" /> Online · Shanghai / UTC+8
-          </div>
           <h1 className="hero-name">I am Zachary Cheng <span>我是程致远</span></h1>
           <p className="hero-domain">
             {lang === 'zh' ? '这里是' : 'This is '}<span>crazyczy.com</span><i aria-hidden="true" />
@@ -27,6 +24,7 @@ export function HomeView({ lang }: { lang: Language }) {
           <p className="mt-8 max-w-xl text-pretty text-base leading-7 text-slate-400 sm:text-lg">{t.lead}</p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <a href={`/${lang}/blog/`} className="primary-pill">{t.read} <span>↗</span></a>
+            <a href="https://github.com/zacharyczy" target="_blank" rel="noreferrer" className="secondary-pill"><span>⌘</span> GitHub</a>
             <a href={`/${lang}/projects/`} className="secondary-pill"><span>{'{ }'}</span> {t.browse}</a>
           </div>
         </div>

@@ -1,4 +1,10 @@
 import enHello from '@/content/posts/en/hello-world.md?raw';
+import enCompiler from '@/content/posts/en/compiler.md?raw';
+import enCrazyczy from '@/content/posts/en/crazyczy.md?raw';
+import enGentzen from '@/content/posts/en/gentzen.md?raw';
+import zhCompiler from '@/content/posts/zh/compiler.md?raw';
+import zhCrazyczy from '@/content/posts/zh/crazyczy.md?raw';
+import zhGentzen from '@/content/posts/zh/gentzen.md?raw';
 import zhHello from '@/content/posts/zh/hello-world.md?raw';
 
 export type Language = 'zh' | 'en';
@@ -44,7 +50,12 @@ function parsePost(slug: string, raw: string): Post {
   };
 }
 
-const allPosts = [parsePost('hello-world', zhHello), parsePost('hello-world', enHello)];
+const allPosts = [
+  parsePost('hello-world', zhHello), parsePost('hello-world', enHello),
+  parsePost('gentzen', zhGentzen), parsePost('gentzen', enGentzen),
+  parsePost('compiler', zhCompiler), parsePost('compiler', enCompiler),
+  parsePost('crazyczy', zhCrazyczy), parsePost('crazyczy', enCrazyczy),
+];
 
 export const posts = allPosts.filter((post) => !post.draft);
 export function getPosts(lang: Language) {
