@@ -2,7 +2,7 @@ import type { Language } from './content';
 
 export const copy = {
   zh: {
-    locale: 'zh-CN', home: '首页', blog: '文章', projects: '项目', about: '关于', tags: '标签',
+    locale: 'zh-CN', home: '首页', blog: '文章', projects: '项目', games: '游戏', terminal: '终端', about: '关于', tags: '标签',
     greeting: '你好，我是 CZY。', lead: '一个关于代码、产品与持续创造的个人空间。这里记录我做过的项目，也整理那些值得留下的技术思考。',
     read: '阅读文章', browse: '浏览项目', latest: '最近在写', latestHint: '技术笔记、构建过程，以及偶尔偏离主题的观察。',
     allWriting: '全部文章', allWritingHint: '关于 Web 开发、产品设计与更平静的工作方式。',
@@ -11,7 +11,7 @@ export const copy = {
     back: '返回文章', language: 'English', languageCode: 'EN', readTime: '3 分钟阅读',
   },
   en: {
-    locale: 'en', home: 'Home', blog: 'Writing', projects: 'Projects', about: 'About', tags: 'Tags',
+    locale: 'en', home: 'Home', blog: 'Writing', projects: 'Projects', games: 'Games', terminal: 'Terminal', about: 'About', tags: 'Tags',
     greeting: 'Hi, I’m CZY.', lead: 'A personal space about code, products, and the practice of making. I share projects here—and keep the technical ideas worth returning to.',
     read: 'Read the writing', browse: 'View projects', latest: 'Latest writing', latestHint: 'Technical notes, build logs, and the occasional useful tangent.',
     allWriting: 'All writing', allWritingHint: 'Web development, product design, and calmer ways of working.',

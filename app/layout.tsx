@@ -4,26 +4,26 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL('https://crazyczy.com'),
   title: {
-    default: 'CZY — Build things. Write the signal.',
-    template: '%s · CZY',
+    default: 'Zachary Cheng 程致远 · crazyczy.com',
+    template: '%s · crazyczy.com',
   },
-  description: 'CZY 的个人技术博客，记录代码、产品与持续创造。',
+  description: 'Zachary Cheng 程致远的个人技术博客、项目、游戏与数字空间。',
   alternates: {
     canonical: '/zh/',
     languages: { 'zh-CN': '/zh/', en: '/en/' },
   },
   openGraph: {
     type: 'website',
-    siteName: 'CZY',
-    title: 'CZY — Build things. Write the signal.',
-    description: '一个关于代码、产品与持续创造的个人空间。',
+    siteName: 'crazyczy.com',
+    title: 'I am Zachary Cheng 我是程致远',
+    description: '个人技术博客、项目、游戏与数字空间。',
     url: 'https://crazyczy.com/zh/',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'CZY — Build things. Write the signal.' }],
+    images: [{ url: '/og.png', width: 1731, height: 909, alt: 'I am Zachary Cheng 我是程致远 · crazyczy.com' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CZY — Build things. Write the signal.',
-    description: '一个关于代码、产品与持续创造的个人空间。',
+    title: 'I am Zachary Cheng 我是程致远',
+    description: '个人技术博客、项目、游戏与数字空间。',
     images: ['/og.png'],
   },
 };
@@ -34,7 +34,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className="dark">
+    <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: "(function(){try{var s=localStorage.getItem('crazyczy-theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()" }} />
+      </head>
       <body>{children}</body>
     </html>
   );

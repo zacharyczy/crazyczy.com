@@ -9,7 +9,7 @@ export function HomeView({ lang }: { lang: Language }) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'Person', name: 'CZY', url: 'https://crazyczy.com' },
+      { '@type': 'Person', name: 'Zachary Cheng', alternateName: '程致远', url: 'https://crazyczy.com' },
       { '@type': 'WebSite', name: 'CZY', url: 'https://crazyczy.com', inLanguage: ['zh-CN', 'en'] },
     ],
   };
@@ -20,10 +20,10 @@ export function HomeView({ lang }: { lang: Language }) {
           <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-300/5 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-emerald-200/80">
             <span className="size-2 rounded-full bg-emerald-300" /> Online · Shanghai / UTC+8
           </div>
-          <p className="mb-5 font-mono text-sm text-cyan-300">{t.greeting}</p>
-          <h1 className="max-w-3xl text-balance text-[clamp(3.4rem,8vw,7.2rem)] font-semibold leading-[.9] tracking-[-0.075em] text-white">
-            Build things.<span className="block text-slate-500">Write the signal.</span>
-          </h1>
+          <h1 className="hero-name">I am Zachary Cheng <span>我是程致远</span></h1>
+          <p className="hero-domain">
+            {lang === 'zh' ? '这里是' : 'This is '}<span>crazyczy.com</span><i aria-hidden="true" />
+          </p>
           <p className="mt-8 max-w-xl text-pretty text-base leading-7 text-slate-400 sm:text-lg">{t.lead}</p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <a href={`/${lang}/blog/`} className="primary-pill">{t.read} <span>↗</span></a>
