@@ -91,6 +91,17 @@ function FootballField() {
           <meshStandardMaterial color={index % 2 ? '#2f7545' : '#3e8650'} roughness={.94} />
         </mesh>
       ))}
+      {[
+        [0, -1.17, 4.15, .018],
+        [0, 1.17, 4.15, .018],
+        [-2.07, 0, .018, 2.35],
+        [2.07, 0, .018, 2.35],
+      ].map((line, index) => (
+        <mesh key={index} position={[line[0], .134, line[1]]}>
+          <boxGeometry args={[line[2], .014, line[3]]} />
+          <meshBasicMaterial color="#f7f1df" />
+        </mesh>
+      ))}
       <mesh position={[0, .132, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[.32, .345, 48]} />
         <meshBasicMaterial color="#f7f1df" />
@@ -99,8 +110,14 @@ function FootballField() {
         <planeGeometry args={[.018, 2.34]} />
         <meshBasicMaterial color="#f7f1df" />
       </mesh>
+      <mesh position={[0, .136, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.025, 18]} /><meshBasicMaterial color="#f7f1df" /></mesh>
       {[-1, 1].map((side) => (
         <group key={side}>
+          <group position={[side * 1.69, .138, 0]}>
+            <mesh position={[-side * .19, 0, -.48]}><boxGeometry args={[.38, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>
+            <mesh position={[-side * .19, 0, .48]}><boxGeometry args={[.38, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>
+            <mesh position={[-side * .38, 0, 0]}><boxGeometry args={[.018, .014, .98]} /><meshBasicMaterial color="#f7f1df" /></mesh>
+          </group>
           <mesh position={[side * 1.63, .133, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[.24, .255, 32, 1, side > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI]} />
             <meshBasicMaterial color="#f7f1df" />
@@ -314,7 +331,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
   return (
     <section className={`home-experience ${dismissed ? 'entered' : ''}`} aria-label="Interactive personal room">
       <div className="room-canvas">
-        <Canvas shadows camera={{ position: [.35, 6.2, 4.45], fov: 42 }} dpr={[1, 1.8]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
+        <Canvas shadows camera={{ position: [.35, 6.2, 4.45], fov: 42 }} dpr={[1, 1.45]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
           <Suspense fallback={null}><Room lifted={lifted} look={look} /></Suspense>
         </Canvas>
       </div>
@@ -330,7 +347,6 @@ export function HomeExperience({ lang }: { lang: Language }) {
       <div className="room-pixel-overlay" aria-hidden="true" />
       <div className="room-vignette" aria-hidden="true" />
       <div className="intro-type">
-        <p>CRAZYCZY · PERSONAL FIELD NOTES</p>
         <h1>
           <span>{typing.out[0]}{typing.activeLine === 0 && <i />}</span>
           <span>{typing.out[1]}{typing.activeLine === 1 && <i />}</span>

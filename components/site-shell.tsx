@@ -43,10 +43,6 @@ export function SiteShell({ lang, active, path, children }: { lang: Language; ac
         <SuggestionsPanel lang={lang} mobile />
       </nav>
       {children}
-      <footer className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-5 py-9 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <p className="font-mono">© 2026 CZY · Built with curiosity.</p>
-        <div className="flex gap-5"><Link href={`/${lang}/tags/`} className="hover:text-white">{t.tags}</Link><Link href="/rss.xml" className="hover:text-white">RSS</Link></div>
-      </footer>
     </main>
   );
 }
