@@ -1,6 +1,9 @@
 import type { Language } from '@/lib/content';
 import { getPosts } from '@/lib/content';
+import { copy } from '@/lib/copy';
 import { HomeExperience } from './home-experience';
+import { SiteShell } from './site-shell';
+import { WritingIndex } from './writing-index';
 
 export function HomeView({ lang }: { lang: Language }) {
   const posts = getPosts(lang);
@@ -13,7 +16,17 @@ export function HomeView({ lang }: { lang: Language }) {
   };
   return (
     <>
-      <HomeExperience lang={lang} posts={posts} />
+      <HomeExperience lang={lang} />
+      <SiteShell lang={lang} active="home">
+        <section className="home-return">
+          <div>
+            <p className="eyebrow">CRAZYCZY / FIELD NOTES</p>
+            <h1>{lang === 'en' ? 'Code, ideas, and things worth keeping.' : '代码、想法，以及值得留下的事。'}</h1>
+          </div>
+          <p>{copy[lang].lead}</p>
+        </section>
+        <WritingIndex lang={lang} posts={posts} />
+      </SiteShell>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     </>
   );

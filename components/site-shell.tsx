@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Language } from '@/lib/content';
 import { copy } from '@/lib/copy';
 import { ThemeToggle } from './theme-toggle';
+import { SuggestionsPanel } from './suggestions-panel';
 
 export function SiteShell({ lang, active, path, children }: { lang: Language; active?: string; path?: string; children: ReactNode }) {
   const t = copy[lang];
@@ -28,6 +29,7 @@ export function SiteShell({ lang, active, path, children }: { lang: Language; ac
           {navItems.map(([key, label, href]) => (
             <a key={key} className={`nav-link ${active === key ? 'text-white' : ''}`} href={href}>{label}</a>
           ))}
+          <SuggestionsPanel lang={lang} />
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle lang={lang} />
@@ -38,6 +40,7 @@ export function SiteShell({ lang, active, path, children }: { lang: Language; ac
       </header>
       <nav className="mx-auto flex w-full max-w-6xl gap-5 overflow-x-auto px-5 pb-4 text-xs text-slate-500 lg:hidden" aria-label="Mobile navigation">
         {navItems.map(([key, label, href]) => <a key={key} href={href} className={active === key ? 'text-cyan-200' : 'hover:text-white'}>{label}</a>)}
+        <SuggestionsPanel lang={lang} mobile />
       </nav>
       {children}
       <footer className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-5 py-9 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between sm:px-8">
