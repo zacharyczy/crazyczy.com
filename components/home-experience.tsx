@@ -1,28 +1,30 @@
 'use client';
 
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, Html, RoundedBox } from '@react-three/drei';
+import { ContactShadows, Html, OrbitControls, RoundedBox, useTexture } from '@react-three/drei';
 import { Globe2 } from 'lucide-react';
 import Image, { type StaticImageData } from 'next/image';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { Language } from '@/lib/content';
 import messiPhoto from '@/pic/梅西.png';
 import jayPhoto from '@/pic/Jay.png';
 import friendsPhoto from '@/pic/老友记五人.png';
 import haiziPhoto from '@/pic/海子.png';
+import gardenBackdrop from '@/pic/jiangnan-garden.png';
 
 const WORDS = {
   en: {
     intro: ['Hey, I am Zachary Cheng', 'Welcome to crazyczy.com'],
     click: 'Click anywhere to lift your eyes',
-    explore: 'Move your pointer to look around',
+    explore: 'Drag to look · scroll or pinch to zoom',
     enter: 'Press Enter to continue',
   },
   zh: {
     intro: ['嗨，我是 Zachary Cheng', '欢迎来到 crazyczy.com'],
     click: '点击任意位置，抬头看看',
-    explore: '移动鼠标，环顾房间',
+    explore: '按住拖动视角 · 滚轮或双指缩放',
     enter: '按回车继续',
   },
 };
@@ -202,37 +204,102 @@ function WallPhoto({ position, rotation = 0, src, large = false }: { position: [
 }
 
 function RainWindow() {
-  const drops = useMemo(() => Array.from({ length: 110 }, (_, index) => ({
-    x: ((index * 41) % 109) / 108 * 4.8 - 2.4,
-    y: ((index * 59) % 101) / 100 * 3.7 - 1.85,
-    speed: .7 + ((index * 31) % 47) / 38,
-    length: .06 + (index % 5) * .024,
+  const gardenTextureSource = useTexture(gardenBackdrop.src);
+  const gardenTexture = useMemo(() => {
+    const texture = gardenTextureSource.clone();
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.anisotropy = 8;
+    texture.needsUpdate = true;
+    return texture;
+  }, [gardenTextureSource]);
+
+  const drops = useMemo(() => Array.from({ length: 160 }, (_, index) => ({
+    x: ((index * 41) % 157) / 156 * 4.96 - 2.48,
+    y: ((index * 59) % 149) / 148 * 3.9 - 1.95,
+    speed: .72 + ((index * 31) % 53) / 34,
+    length: .045 + (index % 7) * .018,
+    opacity: .35 + (index % 5) * .1,
   })), []);
   const refs = useRef<(THREE.Mesh | null)[]>([]);
+
   useFrame((_, delta) => refs.current.forEach((drop, index) => {
     if (!drop) return;
-    drop.position.y -= delta * drops[index].speed;
-    drop.position.x -= delta * .08;
-    if (drop.position.y < -1.88) {
-      drop.position.y = 1.88;
+    const safeDelta = Math.min(delta, .04);
+    drop.position.y -= safeDelta * drops[index].speed;
+    drop.position.x -= safeDelta * .075;
+    if (drop.position.y < -1.96) {
+      drop.position.y = 1.96;
       drop.position.x = drops[index].x;
     }
   }));
 
+  const bamboo = [-2.28, -2.08, -1.87, 2.02, 2.22, 2.4];
+  const stones = [-1.8, -1.46, 1.35, 1.72, 2.04];
+
   return (
     <group position={[4.42, 3.08, .05]} rotation={[0, -Math.PI / 2, 0]}>
-      <mesh><planeGeometry args={[5.25, 4.28]} /><meshPhysicalMaterial color="#aac0ba" transparent opacity={.64} roughness={.24} transmission={.18} /></mesh>
-      <mesh position={[0, -1.48, -.08]}><planeGeometry args={[5.2, 1.28]} /><meshStandardMaterial color="#587260" /></mesh>
-      <mesh position={[0, -1.28, .01]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[.65, .82, 24, 1, 0, Math.PI]} /><meshStandardMaterial color="#d6c7a8" /></mesh>
-      <group position={[.6, -.52, -.03]}>
-        <mesh position={[0, .42, 0]}><boxGeometry args={[1.05, .18, .16]} /><meshStandardMaterial color="#67382d" /></mesh>
-        <mesh position={[0, .78, 0]} rotation={[0,0,Math.PI/4]}><boxGeometry args={[.88, .88, .12]} /><meshStandardMaterial color="#333e35" /></mesh>
-        <mesh position={[0, .72, .03]}><boxGeometry args={[1.16, .16, .16]} /><meshStandardMaterial color="#39483a" /></mesh>
-        {[-.4,.4].map(x => <mesh key={x} position={[x,.12,0]}><boxGeometry args={[.08,.72,.1]} /><meshStandardMaterial color="#67382d" /></mesh>)}
+      <mesh position={[0, 0, -.12]}>
+        <planeGeometry args={[5.18, 4.18]} />
+        <meshBasicMaterial map={gardenTexture} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, 0, .035]}>
+        <planeGeometry args={[5.18, 4.18]} />
+        <meshPhysicalMaterial color="#d9efed" transparent opacity={.13} roughness={.16} transmission={.28} thickness={.04} />
+      </mesh>
+
+      <group position={[-1.78, -.55, -.01]}>
+        <mesh position={[0, .36, 0]} rotation={[0, 0, -.08]} castShadow>
+          <cylinderGeometry args={[.13, .24, 1.62, 7]} />
+          <meshStandardMaterial color="#3d3327" roughness={.95} flatShading />
+        </mesh>
+        <mesh position={[.22, 1.02, 0]} rotation={[0, 0, -.58]}>
+          <cylinderGeometry args={[.07, .12, 1.12, 7]} />
+          <meshStandardMaterial color="#42372b" roughness={.95} flatShading />
+        </mesh>
+        {[
+          [-.38, 1.2, .48, '#244c35'],
+          [.14, 1.47, .62, '#315f40'],
+          [.68, 1.32, .47, '#3d7049'],
+          [-.7, .84, .4, '#294e35'],
+          [.48, .88, .38, '#48784f'],
+        ].map((leaf, index) => (
+          <mesh key={index} position={[leaf[0] as number, leaf[1] as number, -.01]} scale={[leaf[2] as number, (leaf[2] as number) * .72, .32]}>
+            <dodecahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial color={leaf[3] as string} roughness={1} flatShading />
+          </mesh>
+        ))}
       </group>
-      {[[-1.62, -.62, .72], [-.58, -.72, .95], [1.64, -.62, .68], [2.08, -.72, .48]].map((v, index) => <group key={index} position={[v[0], v[1], -.04]}><mesh position={[0, .45, 0]}><cylinderGeometry args={[.055, .16, 1.12, 9]} /><meshStandardMaterial color="#4c4a36" /></mesh><mesh position={[0, .98, 0]} scale={[v[2], .48, 1]}><sphereGeometry args={[.72, 14, 10]} /><meshStandardMaterial color={index % 2 ? '#355f42' : '#52744b'} /></mesh></group>)}
-      {[-1.3, 0, 1.3].map((x) => <mesh key={x} position={[x, 0, .055]}><boxGeometry args={[.055, 4.34, .06]} /><meshStandardMaterial color="#3a3028" /></mesh>)}
-      {drops.map((drop, index) => <mesh ref={(node) => { refs.current[index] = node; }} key={index} position={[drop.x, drop.y, .1]} rotation={[0,0,-.08]}><planeGeometry args={[.014, drop.length]} /><meshBasicMaterial color="#f1faf8" transparent opacity={.68} /></mesh>)}
+
+      {bamboo.map((x, index) => (
+        <group key={x} position={[x, -.2, .015]} rotation={[0, 0, (index % 3 - 1) * .025]}>
+          <mesh><cylinderGeometry args={[.026, .036, 3.42, 7]} /><meshStandardMaterial color={index % 2 ? '#536f3f' : '#66804a'} roughness={.86} flatShading /></mesh>
+          {[-.88, -.22, .46, 1.08].map((y, leafIndex) => (
+            <group key={y} position={[0, y, 0]} rotation={[0, 0, leafIndex % 2 ? -.75 : .75]}>
+              <mesh position={[.19, 0, 0]} scale={[.34, .07, .025]}><sphereGeometry args={[1, 6, 4]} /><meshStandardMaterial color={leafIndex % 2 ? '#355f3d' : '#456f45'} flatShading /></mesh>
+            </group>
+          ))}
+        </group>
+      ))}
+
+      {stones.map((x, index) => (
+        <mesh key={x} position={[x, -1.68 + (index % 2) * .1, .04]} rotation={[.15, index * .42, -.08]} scale={[.34 + index % 2 * .12, .24 + index % 3 * .05, .18]}>
+          <dodecahedronGeometry args={[1, 0]} />
+          <meshStandardMaterial color={index % 2 ? '#59635b' : '#73766b'} roughness={1} flatShading />
+        </mesh>
+      ))}
+
+      {[-1.3, 0, 1.3].map((x) => <mesh key={x} position={[x, 0, .08]}><boxGeometry args={[.055, 4.32, .07]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
+      {[-2.56, 2.56].map((x) => <mesh key={x} position={[x, 0, .08]}><boxGeometry args={[.08, 4.32, .08]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
+      {[-2.08, 2.08].map((y) => <mesh key={y} position={[0, y, .08]}><boxGeometry args={[5.2, .08, .08]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
+
+      {drops.map((drop, index) => (
+        <mesh ref={(node) => { refs.current[index] = node; }} key={index} position={[drop.x, drop.y, .115]} rotation={[0, 0, -.075]}>
+          <planeGeometry args={[.011, drop.length]} />
+          <meshBasicMaterial color="#f2fbfb" transparent opacity={drop.opacity} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -246,7 +313,10 @@ function WorldMap() {
     <group position={[-4.48, 3.78, -.15]} rotation={[0, Math.PI / 2, 0]}>
       <RoundedBox args={[3.86, 2.32, .11]} radius={.035}><meshStandardMaterial color="#6a4f35" /></RoundedBox>
       <mesh position={[0, 0, .065]}><planeGeometry args={[3.61, 2.07]} /><meshStandardMaterial color="#9bbab2" roughness={.95} /></mesh>
+      {[-1.35, -.9, -.45, 0, .45, .9, 1.35].map((x) => <mesh key={x} position={[x, 0, .077]}><boxGeometry args={[.012, 2.02, .009]} /><meshBasicMaterial color="#d7e1d7" transparent opacity={.22} /></mesh>)}
+      {[-.72, -.36, 0, .36, .72].map((y) => <mesh key={y} position={[0, y, .077]}><boxGeometry args={[3.55, .012, .009]} /><meshBasicMaterial color="#d7e1d7" transparent opacity={.22} /></mesh>)}
       {pixels.map((p, index) => <mesh key={index} position={[p[0], p[1], .083]}><boxGeometry args={[p[2], p[3], .025]} /><meshStandardMaterial color={['#af9257','#728750','#927344'][index % 3]} /></mesh>)}
+      {[[.74,.54,.18,.12],[.94,.43,.16,.12],[.52,.31,.2,.15],[-1.08,.62,.16,.12],[-.88,.5,.18,.13]].map((p,index) => <mesh key={index} position={[p[0],p[1],.105]}><boxGeometry args={[p[2],p[3],.018]} /><meshStandardMaterial color={index%2?'#566d3e':'#c2a869'} /></mesh>)}
       <Html transform position={[.88, .38, .115]} distanceFactor={5}><span className="map-pin" aria-label="My location">📍</span></Html>
     </group>
   );
@@ -268,18 +338,74 @@ function GuitarAndRecords() {
   );
 }
 
-function Room({ lifted, look }: { lifted: boolean; look: { current: { x: number; y: number } } }) {
+function CameraRig({ lifted }: { lifted: boolean }) {
   const { camera } = useThree();
+  const controls = useRef<OrbitControlsImpl>(null);
+  const elapsed = useRef(0);
+  const wasLifted = useRef(false);
+  const transitionStartPosition = useRef(new THREE.Vector3());
+  const transitionStartTarget = useRef(new THREE.Vector3());
+  const overheadPosition = useMemo(() => new THREE.Vector3(.35, 6.2, 4.45), []);
+  const overheadTarget = useMemo(() => new THREE.Vector3(.35, 1.22, .18), []);
+  const roomPosition = useMemo(() => new THREE.Vector3(0, 3.05, 7.6), []);
+  const roomTarget = useMemo(() => new THREE.Vector3(0, 2.88, 6.02), []);
+
   useFrame((_, delta) => {
-    const target = lifted
-      ? new THREE.Vector3(look.current.x * .52, 3.05 + look.current.y * .22, 7.25)
-      : new THREE.Vector3(.35, 6.2, 4.45);
-    camera.position.lerp(target, 1 - Math.pow(.006, delta));
-    camera.lookAt(look.current.x * .55, lifted ? 2.18 + look.current.y * .12 : 1.22, lifted ? -1.25 : .16);
+    if (!controls.current) return;
+    if (lifted && !wasLifted.current) {
+      elapsed.current = 0;
+      transitionStartPosition.current.copy(camera.position);
+      transitionStartTarget.current.copy(controls.current.target);
+    }
+    wasLifted.current = lifted;
+
+    if (!lifted) {
+      controls.current.enabled = false;
+      camera.position.lerp(overheadPosition, 1 - Math.pow(.004, Math.min(delta, .04)));
+      controls.current.target.lerp(overheadTarget, .12);
+    } else if (elapsed.current < 1.18) {
+      elapsed.current += Math.min(delta, .04);
+      controls.current.enabled = false;
+      const ease = 1 - Math.pow(1 - Math.min(elapsed.current / 1.18, 1), 3);
+      camera.position.lerpVectors(transitionStartPosition.current, roomPosition, ease);
+      controls.current.target.lerpVectors(transitionStartTarget.current, roomTarget, ease);
+      if (elapsed.current >= 1.18) {
+        camera.position.copy(roomPosition);
+        controls.current.target.copy(roomTarget);
+      }
+    } else {
+      controls.current.enabled = true;
+    }
+    controls.current.update();
   });
 
   return (
+    <OrbitControls
+      ref={controls}
+      makeDefault
+      enabled={false}
+      enableRotate
+      enableZoom
+      enablePan={false}
+      enableDamping
+      dampingFactor={.065}
+      rotateSpeed={.52}
+      zoomSpeed={.72}
+      minDistance={.92}
+      maxDistance={3.2}
+      minPolarAngle={.78}
+      maxPolarAngle={1.92}
+      minAzimuthAngle={-1.08}
+      maxAzimuthAngle={1.08}
+      touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
+    />
+  );
+}
+
+function Room({ lifted }: { lifted: boolean }) {
+  return (
     <>
+      <CameraRig lifted={lifted} />
       <color attach="background" args={['#a99d8b']} />
       <fog attach="fog" args={['#aaa08f', 10, 22]} />
       <ambientLight intensity={1.15} color="#f7ead6" />
@@ -299,7 +425,7 @@ function Room({ lifted, look }: { lifted: boolean; look: { current: { x: number;
       <RainWindow />
       <WorldMap />
       <GuitarAndRecords />
-      <group position={[.35, 1.02, 2.86]} rotation={[0, Math.PI, 0]}>
+      <group position={[.35, .52, -2.7]} rotation={[0, Math.PI, 0]}>
         <RoundedBox args={[3.24, 1.02, 1.52]} radius={.42} castShadow><meshStandardMaterial color="#c85f31" roughness={.82} /></RoundedBox>
         <RoundedBox args={[2.7, .8, 1.28]} radius={.36} position={[0, .54, 0]} rotation={[-.12, 0, 0]}><meshStandardMaterial color="#d56d3b" roughness={.9} /></RoundedBox>
       </group>
@@ -316,7 +442,6 @@ function Room({ lifted, look }: { lifted: boolean; look: { current: { x: number;
 export function HomeExperience({ lang }: { lang: Language }) {
   const [lifted, setLifted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const look = useRef({ x: 0, y: 0 });
   const t = WORDS[lang];
   const typing = useTypewriter(t.intro);
 
@@ -329,20 +454,16 @@ export function HomeExperience({ lang }: { lang: Language }) {
   }, [typing.done]);
 
   return (
-    <section className={`home-experience ${dismissed ? 'entered' : ''}`} aria-label="Interactive personal room">
+    <section className={['home-experience', lifted ? 'lifted' : '', dismissed ? 'entered' : ''].filter(Boolean).join(' ')} aria-label="Interactive personal room">
       <div className="room-canvas">
-        <Canvas shadows camera={{ position: [.35, 6.2, 4.45], fov: 42 }} dpr={[1, 1.45]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
-          <Suspense fallback={null}><Room lifted={lifted} look={look} /></Suspense>
+        <Canvas shadows camera={{ position: [.35, 6.2, 4.45], fov: 49 }} dpr={[1, 1.45]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
+          <Suspense fallback={null}><Room lifted={lifted} /></Suspense>
         </Canvas>
       </div>
       <button
         className="room-look-control"
         aria-label={t.click}
         onClick={() => setLifted(true)}
-        onPointerMove={(event) => {
-          look.current.x = event.clientX / window.innerWidth * 2 - 1;
-          look.current.y = -(event.clientY / window.innerHeight * 2 - 1);
-        }}
       />
       <div className="room-pixel-overlay" aria-hidden="true" />
       <div className="room-vignette" aria-hidden="true" />

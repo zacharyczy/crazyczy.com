@@ -154,6 +154,7 @@
 .room-canvas canvas {
   image-rendering: auto;
   filter: saturate(.88) contrast(1.08) brightness(.96);
+  touch-action: none;
 }
 .room-look-control {
   position: absolute;
@@ -166,6 +167,7 @@
   cursor: grab;
 }
 .room-look-control:active { cursor: grabbing; }
+.home-experience.lifted .room-look-control { pointer-events: none; opacity: 0; }
 .room-pixel-overlay {
   position: absolute;
   z-index: 2;
@@ -312,7 +314,18 @@
 }
 .room-photo { position: relative; width: 116px; height: 143px; overflow: hidden; background: #2a302b; }
 .room-photo.large { width: 170px; height: 204px; }
-.room-photo img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.9) contrast(1.04); }
+.room-photo img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; filter: saturate(.78) contrast(1.15) brightness(.96); }
+.room-photo::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 8%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(20 25 21 / 7%) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: soft-light;
+  content: "";
+}
 .map-pin { display: block; font-size: 1.3rem; filter: drop-shadow(0 2px 2px rgb(0 0 0 / 38%)); }
 
 /* Restored version-one homepage structure with the stronger version-two writing rhythm. */
