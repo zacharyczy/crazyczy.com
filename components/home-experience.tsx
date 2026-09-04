@@ -145,20 +145,55 @@ function FootballField() {
 
 function ScholarSet() {
   return (
-    <group position={[-3.2, 1.36, .2]} rotation={[0, .12, 0]}>
-      <RoundedBox args={[1.35, .035, .88]} radius={.02} position={[.45, -.05, 0]} rotation={[0, -.08, 0]}>
-        <meshStandardMaterial color="#eee2c7" roughness={1} />
-      </RoundedBox>
-      {[0, .12, .24].map((offset) => <mesh key={offset} position={[-.05 + offset, -.025, .29]}><boxGeometry args={[.018, .015, .34]} /><meshStandardMaterial color="#c8b995" /></mesh>)}
-      <mesh castShadow position={[-.48, 0, -.12]}><cylinderGeometry args={[.28, .33, .11, 28]} /><meshStandardMaterial color="#171615" roughness={.42} /></mesh>
-      <mesh position={[-.48, .07, -.12]}><cylinderGeometry args={[.19, .22, .035, 28]} /><meshStandardMaterial color="#050505" roughness={.2} /></mesh>
-      {[-.2, .12].map((x, index) => (
-        <group key={x} position={[x, .36, -.05]} rotation={[0, 0, -.55 + index * .24]}>
-          <mesh><cylinderGeometry args={[.024, .024, .88, 12]} /><meshStandardMaterial color={index ? '#8b3a28' : '#ad7b3f'} /></mesh>
-          <mesh position={[0, -.55, 0]}><coneGeometry args={[.065, .25, 12]} /><meshStandardMaterial color="#19130f" /></mesh>
+    <group position={[-3.05, 1.3, .2]} rotation={[0, .12, 0]}>
+      {[0, 1, 2].map((page) => (
+        <mesh key={page} position={[.35 + page * .018, .018 + page * .009, page * -.02]} rotation={[0, -.08 + page * .015, 0]} castShadow>
+          <boxGeometry args={[1.48, .018, .92]} />
+          <meshStandardMaterial color={page === 2 ? '#eee3c7' : '#d7c7a4'} roughness={.96} />
+        </mesh>
+      ))}
+      {[-.24, -.1, .04].map((x) => <mesh key={x} position={[x + .42, .055, .12]}><boxGeometry args={[.022, .012, .56]} /><meshStandardMaterial color="#b9a886" /></mesh>)}
+
+      <group position={[-.58, .07, -.18]}>
+        <mesh castShadow><boxGeometry args={[.62, .13, .46]} /><meshStandardMaterial color="#242321" roughness={.55} /></mesh>
+        <mesh position={[0, .072, 0]}><boxGeometry args={[.43, .018, .28]} /><meshStandardMaterial color="#080909" roughness={.18} /></mesh>
+        <mesh position={[-.23, .12, -.16]}><boxGeometry args={[.13, .08, .1]} /><meshStandardMaterial color="#393530" roughness={.72} /></mesh>
+      </group>
+
+      <group position={[-.12, .1, .3]}>
+        {[-.18, 0, .18].map((x, index) => <mesh key={x} position={[x, 0, 0]} rotation={[0, 0, index % 2 ? 0 : .12]}><boxGeometry args={[.12, .17, .16]} /><meshStandardMaterial color={index === 1 ? '#7f684c' : '#9b7b55'} roughness={.8} /></mesh>)}
+      </group>
+      {[
+        { z: .22, color: '#9c512f', angle: -.18 },
+        { z: -.04, color: '#aa7a39', angle: .1 },
+      ].map((brush) => (
+        <group key={brush.z} position={[.05, .15, brush.z]} rotation={[0, brush.angle, 0]}>
+          <mesh position={[0, 0, -.2]} castShadow><boxGeometry args={[.045, .045, .92]} /><meshStandardMaterial color={brush.color} roughness={.58} /></mesh>
+          <mesh position={[0, 0, -.71]}><boxGeometry args={[.08, .06, .18]} /><meshStandardMaterial color="#28201a" roughness={.86} /></mesh>
+          <mesh position={[0, 0, .3]}><boxGeometry args={[.07, .065, .08]} /><meshStandardMaterial color="#d1af66" metalness={.55} roughness={.32} /></mesh>
         </group>
       ))}
-      <mesh position={[-.92, .11, .32]}><cylinderGeometry args={[.12, .1, .22, 20]} /><meshStandardMaterial color="#82684d" /></mesh>
+      <group position={[-.98, .12, .32]}>
+        <mesh><boxGeometry args={[.22, .22, .22]} /><meshStandardMaterial color="#76563b" roughness={.86} /></mesh>
+        <mesh position={[0, .13, 0]}><boxGeometry args={[.15, .05, .15]} /><meshStandardMaterial color="#987354" roughness={.8} /></mesh>
+      </group>
+    </group>
+  );
+}
+
+function VoxelPuzzle({ position, rotation = 0, size = .54 }: { position: [number, number, number]; rotation?: number; size?: number }) {
+  const cells = [-1, 0, 1];
+  const sticker = size / 3.7;
+  return (
+    <group position={position} rotation={[.06, rotation, -.04]}>
+      <mesh castShadow><boxGeometry args={[size, size, size]} /><meshStandardMaterial color="#171a18" roughness={.5} /></mesh>
+      {cells.flatMap((a) => cells.map((b) => (
+        <group key={`${a}-${b}`}>
+          <mesh position={[a * size / 3.25, size / 2 + .006, b * size / 3.25]}><boxGeometry args={[sticker, .012, sticker]} /><meshStandardMaterial color={['#f0cc43', '#e46737', '#f4efe0'][(a + b + 6) % 3]} roughness={.48} /></mesh>
+          <mesh position={[a * size / 3.25, b * size / 3.25, size / 2 + .006]}><boxGeometry args={[sticker, sticker, .012]} /><meshStandardMaterial color={['#2d7b55', '#d64a3f', '#396fa0'][(a - b + 6) % 3]} roughness={.48} /></mesh>
+          <mesh position={[size / 2 + .006, a * size / 3.25, b * size / 3.25]}><boxGeometry args={[.012, sticker, sticker]} /><meshStandardMaterial color={['#ede9dc', '#d94b3d', '#2d6ea0'][(a + b + 6) % 3]} roughness={.48} /></mesh>
+        </group>
+      )))}
     </group>
   );
 }
@@ -166,38 +201,57 @@ function ScholarSet() {
 function CabinetAndLamp() {
   return (
     <group>
-      <group position={[-3.75, .95, -3.28]}>
-        <RoundedBox args={[2.65, 1.55, .72]} radius={.045} castShadow><meshStandardMaterial color="#70442d" roughness={.66} /></RoundedBox>
-        <mesh position={[0, .08, .38]}><boxGeometry args={[.035, 1.24, .025]} /><meshStandardMaterial color="#3f281d" /></mesh>
-        {[-.63, .63].map((x) => <mesh key={x} position={[x, .08, .405]}><sphereGeometry args={[.055, 14, 14]} /><meshStandardMaterial color="#d7a94f" metalness={.72} roughness={.25} /></mesh>)}
-        {[-.72, 0, .72].map((x, index) => (
-          <group key={x} position={[x, 1.08, 0]} rotation={[.08, index * .3, .06]}>
-            {[0, .16, .32].map((y, row) => <mesh key={y} position={[0, y, 0]}><boxGeometry args={[.46, .145, .46]} /><meshStandardMaterial color={[['#e8cb43','#376aa0','#bf463a'],['#f0eadc','#d06d33','#327e58'],['#704f91','#dcb53d','#2e839a']][index][row]} roughness={.45} /></mesh>)}
-            <mesh position={[0, .16, .235]}><boxGeometry args={[.44, .44, .012]} /><meshStandardMaterial color={index === 1 ? '#f0eadc' : '#2d5c8e'} /></mesh>
+      <group position={[-3.72, .88, -3.3]}>
+        <mesh castShadow><boxGeometry args={[2.72, 1.62, .78]} /><meshStandardMaterial color="#5f3c29" roughness={.7} /></mesh>
+        <mesh position={[0, .06, .405]}><boxGeometry args={[2.5, 1.38, .035]} /><meshStandardMaterial color="#734a32" roughness={.62} /></mesh>
+        <mesh position={[0, .06, .43]}><boxGeometry args={[.045, 1.34, .025]} /><meshStandardMaterial color="#35251d" /></mesh>
+        <mesh position={[0, .56, .445]}><boxGeometry args={[2.44, .035, .025]} /><meshStandardMaterial color="#35251d" /></mesh>
+        {[-.62, .62].map((x) => <mesh key={x} position={[x, .08, .458]}><boxGeometry args={[.1, .1, .045]} /><meshStandardMaterial color="#c69a4d" metalness={.66} roughness={.3} /></mesh>)}
+
+        <VoxelPuzzle position={[-.7, 1.15, .02]} rotation={-.32} size={.56} />
+        <VoxelPuzzle position={[.03, 1.08, .02]} rotation={.28} size={.46} />
+        <VoxelPuzzle position={[.62, 1.12, .03]} rotation={-.12} size={.5} />
+
+        {[-1.08, 1.08].map((x, index) => (
+          <group key={x} position={[x, 1.05, .02]}>
+            <mesh position={[0, .08, 0]}><boxGeometry args={[.38, .16, .34]} /><meshStandardMaterial color="#79542c" metalness={.45} roughness={.35} /></mesh>
+            <mesh position={[0, .28, 0]}><boxGeometry args={[.14, .25, .14]} /><meshStandardMaterial color="#d1a64d" metalness={.72} roughness={.24} /></mesh>
+            {[-.14, .14].map((side) => <mesh key={side} position={[side, .48, 0]}><boxGeometry args={[.16, .3, .16]} /><meshStandardMaterial color={index ? '#d4ad58' : '#ba8533'} metalness={.76} roughness={.22} /></mesh>)}
+            <mesh position={[0, .61, 0]}><boxGeometry args={[.42, .12, .2]} /><meshStandardMaterial color={index ? '#d4ad58' : '#ba8533'} metalness={.76} roughness={.22} /></mesh>
           </group>
         ))}
-        {[-1.06, 1.04].map((x, index) => <group key={x} position={[x, 1.11, 0]}><mesh position={[0, .18, 0]}><cylinderGeometry args={[.14, .25, .36, 18]} /><meshStandardMaterial color="#c69a42" metalness={.72} roughness={.25} /></mesh><mesh position={[0, .48, 0]}><sphereGeometry args={[.18, 18, 18]} /><meshStandardMaterial color={index ? '#d8b45c' : '#b98531'} metalness={.76} roughness={.22} /></mesh></group>)}
-        <group position={[.2, 1.26, -.02]}>{['#594632','#8d3e2d','#d0a94f'].map((color, i) => <mesh key={color} position={[i * .13, 0, 0]} rotation={[0,0,(i-1)*.08]}><boxGeometry args={[.1,.62,.35]} /><meshStandardMaterial color={color} /></mesh>)}</group>
       </group>
-      <group position={[-1.75, 0, -3.25]}>
-        <mesh position={[0, 1.5, 0]}><cylinderGeometry args={[.03, .045, 3, 12]} /><meshStandardMaterial color="#292621" metalness={.4} /></mesh>
-        <mesh position={[0, .04, 0]}><cylinderGeometry args={[.4, .47, .08, 28]} /><meshStandardMaterial color="#292621" /></mesh>
-        <mesh position={[0, 2.82, 0]}><coneGeometry args={[.55, .78, 32, 1, true]} /><meshStandardMaterial color="#f0c777" emissive="#f0a33b" emissiveIntensity={.65} side={THREE.DoubleSide} /></mesh>
-        <pointLight position={[0, 2.65, .28]} intensity={32} distance={7} color="#ffb65f" />
+      <group position={[-1.82, 0, -3.25]}>
+        <mesh position={[0, .05, 0]}><boxGeometry args={[.78, .1, .58]} /><meshStandardMaterial color="#292723" metalness={.25} roughness={.55} /></mesh>
+        <mesh position={[0, 1.48, 0]}><boxGeometry args={[.075, 2.86, .075]} /><meshStandardMaterial color="#302c27" metalness={.42} roughness={.42} /></mesh>
+        {[0, 1, 2].map((step) => <mesh key={step} position={[0, 2.48 + step * .17, 0]}><boxGeometry args={[1.02 - step * .2, .2, .72 - step * .12]} /><meshStandardMaterial color="#e8bd6e" emissive="#bd682c" emissiveIntensity={.38} roughness={.76} /></mesh>)}
+        <pointLight position={[0, 2.45, .22]} intensity={28} distance={7} color="#ffb65f" />
       </group>
     </group>
   );
 }
 
-function WallPhoto({ position, rotation = 0, src, large = false }: { position: [number, number, number]; rotation?: number; src: StaticImageData; large?: boolean }) {
-  const width = large ? 2.22 : 1.52;
-  const height = large ? 2.66 : 1.88;
+type PhotoFormat = 'portrait' | 'large' | 'landscape';
+
+function WallPhoto({ position, rotation = 0, src, format = 'portrait' }: { position: [number, number, number]; rotation?: number; src: StaticImageData; format?: PhotoFormat }) {
+  const dimensions: Record<PhotoFormat, [number, number]> = {
+    portrait: [1.42, 1.82],
+    large: [2.15, 2.58],
+    landscape: [2.12, 1.28],
+  };
+  const [width, height] = dimensions[format];
   return (
     <group position={position} rotation={[0, 0, rotation]}>
-      <RoundedBox args={[width + .16, height + .16, .13]} radius={.025} castShadow><meshStandardMaterial color="#281f19" roughness={.46} /></RoundedBox>
-      <RoundedBox args={[width, height, .04]} radius={.015} position={[0, 0, .085]}><meshStandardMaterial color="#e5dac1" roughness={.9} /></RoundedBox>
-      <Html transform position={[0, 0, .112]} distanceFactor={5.65} style={{ pointerEvents: 'none' }}>
-        <div className={`room-photo ${large ? 'large' : ''}`}><Image src={src} alt="" fill sizes={large ? '170px' : '116px'} priority /></div>
+      <mesh castShadow><boxGeometry args={[width + .24, height + .24, .14]} /><meshStandardMaterial color="#2b2018" roughness={.56} /></mesh>
+      <mesh position={[0, 0, .084]}><boxGeometry args={[width + .1, height + .1, .045]} /><meshStandardMaterial color="#d4c29e" roughness={.88} /></mesh>
+      {[
+        [-width / 2 - .07, height / 2 + .07],
+        [width / 2 + .07, height / 2 + .07],
+        [-width / 2 - .07, -height / 2 - .07],
+        [width / 2 + .07, -height / 2 - .07],
+      ].map((corner, index) => <mesh key={index} position={[corner[0], corner[1], .13]}><boxGeometry args={[.07, .07, .035]} /><meshStandardMaterial color="#a37b38" metalness={.64} roughness={.34} /></mesh>)}
+      <Html transform position={[0, 0, .118]} distanceFactor={5.65} style={{ pointerEvents: 'none' }}>
+        <div className={`room-photo ${format}`}><Image src={src} alt="" fill sizes={format === 'large' ? '170px' : format === 'landscape' ? '160px' : '112px'} priority /></div>
       </Html>
     </group>
   );
@@ -235,9 +289,6 @@ function RainWindow() {
     }
   }));
 
-  const bamboo = [-2.28, -2.08, -1.87, 2.02, 2.22, 2.4];
-  const stones = [-1.8, -1.46, 1.35, 1.72, 2.04];
-
   return (
     <group position={[4.42, 3.08, .05]} rotation={[0, -Math.PI / 2, 0]}>
       <mesh position={[0, 0, -.12]}>
@@ -248,47 +299,6 @@ function RainWindow() {
         <planeGeometry args={[5.18, 4.18]} />
         <meshPhysicalMaterial color="#d9efed" transparent opacity={.13} roughness={.16} transmission={.28} thickness={.04} />
       </mesh>
-
-      <group position={[-1.78, -.55, -.01]}>
-        <mesh position={[0, .36, 0]} rotation={[0, 0, -.08]} castShadow>
-          <cylinderGeometry args={[.13, .24, 1.62, 7]} />
-          <meshStandardMaterial color="#3d3327" roughness={.95} flatShading />
-        </mesh>
-        <mesh position={[.22, 1.02, 0]} rotation={[0, 0, -.58]}>
-          <cylinderGeometry args={[.07, .12, 1.12, 7]} />
-          <meshStandardMaterial color="#42372b" roughness={.95} flatShading />
-        </mesh>
-        {[
-          [-.38, 1.2, .48, '#244c35'],
-          [.14, 1.47, .62, '#315f40'],
-          [.68, 1.32, .47, '#3d7049'],
-          [-.7, .84, .4, '#294e35'],
-          [.48, .88, .38, '#48784f'],
-        ].map((leaf, index) => (
-          <mesh key={index} position={[leaf[0] as number, leaf[1] as number, -.01]} scale={[leaf[2] as number, (leaf[2] as number) * .72, .32]}>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color={leaf[3] as string} roughness={1} flatShading />
-          </mesh>
-        ))}
-      </group>
-
-      {bamboo.map((x, index) => (
-        <group key={x} position={[x, -.2, .015]} rotation={[0, 0, (index % 3 - 1) * .025]}>
-          <mesh><cylinderGeometry args={[.026, .036, 3.42, 7]} /><meshStandardMaterial color={index % 2 ? '#536f3f' : '#66804a'} roughness={.86} flatShading /></mesh>
-          {[-.88, -.22, .46, 1.08].map((y, leafIndex) => (
-            <group key={y} position={[0, y, 0]} rotation={[0, 0, leafIndex % 2 ? -.75 : .75]}>
-              <mesh position={[.19, 0, 0]} scale={[.34, .07, .025]}><sphereGeometry args={[1, 6, 4]} /><meshStandardMaterial color={leafIndex % 2 ? '#355f3d' : '#456f45'} flatShading /></mesh>
-            </group>
-          ))}
-        </group>
-      ))}
-
-      {stones.map((x, index) => (
-        <mesh key={x} position={[x, -1.68 + (index % 2) * .1, .04]} rotation={[.15, index * .42, -.08]} scale={[.34 + index % 2 * .12, .24 + index % 3 * .05, .18]}>
-          <dodecahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial color={index % 2 ? '#59635b' : '#73766b'} roughness={1} flatShading />
-        </mesh>
-      ))}
 
       {[-1.3, 0, 1.3].map((x) => <mesh key={x} position={[x, 0, .08]}><boxGeometry args={[.055, 4.32, .07]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
       {[-2.56, 2.56].map((x) => <mesh key={x} position={[x, 0, .08]}><boxGeometry args={[.08, 4.32, .08]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
@@ -304,36 +314,171 @@ function RainWindow() {
   );
 }
 
+type GeoPoint = [number, number];
+
+const CONTINENT_OUTLINES: GeoPoint[][] = [
+  [[-168, 70], [-150, 58], [-130, 54], [-124, 42], [-108, 28], [-98, 18], [-82, 24], [-80, 31], [-66, 46], [-58, 55], [-75, 65], [-100, 72], [-135, 74]],
+  [[-82, 12], [-70, 10], [-50, 2], [-36, -16], [-48, -34], [-55, -54], [-68, -50], [-73, -30], [-80, -6]],
+  [[-10, 35], [2, 43], [12, 44], [20, 54], [32, 61], [22, 71], [3, 70], [-10, 58]],
+  [[-18, 34], [8, 38], [32, 31], [50, 11], [42, -12], [31, -35], [12, -35], [-3, -20], [-13, 4]],
+  [[24, 39], [40, 58], [62, 70], [103, 76], [143, 63], [176, 51], [158, 34], [141, 9], [116, 2], [104, 22], [80, 8], [60, 27], [42, 32]],
+  [[112, -11], [135, -9], [154, -20], [151, -39], [130, -44], [113, -28]],
+  [[-54, 60], [-42, 60], [-20, 72], [-28, 82], [-48, 84], [-62, 74]],
+  [[130, 31], [143, 45], [146, 42], [137, 30]],
+];
+
+function isInsideOutline(lon: number, lat: number, outline: GeoPoint[]) {
+  let inside = false;
+  for (let current = 0, previous = outline.length - 1; current < outline.length; previous = current++) {
+    const [currentLon, currentLat] = outline[current];
+    const [previousLon, previousLat] = outline[previous];
+    if ((currentLat > lat) !== (previousLat > lat) && lon < (previousLon - currentLon) * (lat - currentLat) / (previousLat - currentLat) + currentLon) inside = !inside;
+  }
+  return inside;
+}
+
 function WorldMap() {
-  const pixels = [
-    [-1.35,.35,.34,.28],[-1.03,.52,.5,.36],[-.8,.18,.38,.42],[-.58,-.2,.25,.5],[-.16,.5,.38,.24],[.16,.48,.34,.29],
-    [.46,.36,.5,.4],[.78,.42,.48,.32],[1.1,.22,.42,.46],[1.38,-.02,.28,.28],[.34,-.15,.26,.44],[.56,-.42,.34,.34],[1.42,-.48,.32,.22],
-  ];
+  const mapWidth = 3.72;
+  const mapHeight = 2.15;
+  const segments = useMemo(() => {
+    const columns = 52;
+    const rows = 26;
+    const cellWidth = mapWidth / columns;
+    const cellHeight = mapHeight / rows;
+    const result: { x: number; y: number; width: number; color: string }[] = [];
+    for (let row = 0; row < rows; row += 1) {
+      const lat = 85 - (row + .5) / rows * 170;
+      let start = -1;
+      for (let column = 0; column <= columns; column += 1) {
+        const lon = -180 + (column + .5) / columns * 360;
+        const land = column < columns && CONTINENT_OUTLINES.some((outline) => isInsideOutline(lon, lat, outline));
+        if (land && start < 0) start = column;
+        if ((!land || column === columns) && start >= 0) {
+          const count = column - start;
+          const centerColumn = start + count / 2;
+          const seed = Math.abs(Math.round(lat * .13 + start * .71));
+          result.push({
+            x: -mapWidth / 2 + centerColumn * cellWidth,
+            y: mapHeight / 2 - (row + .5) * cellHeight,
+            width: count * cellWidth * .96,
+            color: ['#9b864c', '#72834a', '#b39b5d', '#766443'][seed % 4],
+          });
+          start = -1;
+        }
+      }
+    }
+    return result;
+  }, []);
+
   return (
     <group position={[-4.48, 3.78, -.15]} rotation={[0, Math.PI / 2, 0]}>
-      <RoundedBox args={[3.86, 2.32, .11]} radius={.035}><meshStandardMaterial color="#6a4f35" /></RoundedBox>
-      <mesh position={[0, 0, .065]}><planeGeometry args={[3.61, 2.07]} /><meshStandardMaterial color="#9bbab2" roughness={.95} /></mesh>
-      {[-1.35, -.9, -.45, 0, .45, .9, 1.35].map((x) => <mesh key={x} position={[x, 0, .077]}><boxGeometry args={[.012, 2.02, .009]} /><meshBasicMaterial color="#d7e1d7" transparent opacity={.22} /></mesh>)}
-      {[-.72, -.36, 0, .36, .72].map((y) => <mesh key={y} position={[0, y, .077]}><boxGeometry args={[3.55, .012, .009]} /><meshBasicMaterial color="#d7e1d7" transparent opacity={.22} /></mesh>)}
-      {pixels.map((p, index) => <mesh key={index} position={[p[0], p[1], .083]}><boxGeometry args={[p[2], p[3], .025]} /><meshStandardMaterial color={['#af9257','#728750','#927344'][index % 3]} /></mesh>)}
-      {[[.74,.54,.18,.12],[.94,.43,.16,.12],[.52,.31,.2,.15],[-1.08,.62,.16,.12],[-.88,.5,.18,.13]].map((p,index) => <mesh key={index} position={[p[0],p[1],.105]}><boxGeometry args={[p[2],p[3],.018]} /><meshStandardMaterial color={index%2?'#566d3e':'#c2a869'} /></mesh>)}
-      <Html transform position={[.88, .38, .115]} distanceFactor={5}><span className="map-pin" aria-label="My location">📍</span></Html>
+      <mesh castShadow><boxGeometry args={[4.08, 2.51, .14]} /><meshStandardMaterial color="#4c3121" roughness={.66} /></mesh>
+      <mesh position={[0, 0, .085]}><planeGeometry args={[3.82, 2.25]} /><meshStandardMaterial color="#809b96" roughness={.94} /></mesh>
+      {[-1.43, -.72, 0, .72, 1.43].map((x) => <mesh key={x} position={[x, 0, .096]}><boxGeometry args={[.012, 2.14, .01]} /><meshBasicMaterial color="#d7e4dc" transparent opacity={.2} /></mesh>)}
+      {[-.78, -.39, 0, .39, .78].map((y) => <mesh key={y} position={[0, y, .096]}><boxGeometry args={[3.7, .012, .01]} /><meshBasicMaterial color="#d7e4dc" transparent opacity={.2} /></mesh>)}
+      {segments.map((segment, index) => (
+        <mesh key={index} position={[segment.x, segment.y, .112]}>
+          <boxGeometry args={[segment.width, mapHeight / 26 * .9, .035]} />
+          <meshStandardMaterial color={segment.color} roughness={.88} />
+        </mesh>
+      ))}
+      {[
+        [-1.96, 1.18], [1.96, 1.18], [-1.96, -1.18], [1.96, -1.18],
+      ].map((corner, index) => <mesh key={index} position={[corner[0], corner[1], .12]}><boxGeometry args={[.09, .09, .035]} /><meshStandardMaterial color="#b68940" metalness={.5} roughness={.35} /></mesh>)}
+      <Html transform position={[1.23, .4, .15]} distanceFactor={5}><span className="map-pin" aria-label="My location">📍</span></Html>
     </group>
   );
 }
 
 function GuitarAndRecords() {
   return (
-    <group position={[3.45, .05, -3.3]}>
-      <group rotation={[0, 0, -.1]}>
-        <mesh position={[0, 1.05, 0]}><cylinderGeometry args={[.075, .09, 2.05, 14]} /><meshStandardMaterial color="#4b2b1d" /></mesh>
-        <mesh position={[0, .23, 0]} scale={[.78, 1, .24]}><sphereGeometry args={[.7, 30, 30]} /><meshStandardMaterial color="#b76a3d" roughness={.5} /></mesh>
-        <mesh position={[0, .38, .18]}><circleGeometry args={[.18, 28]} /><meshStandardMaterial color="#211914" /></mesh>
-        {[-.035,0,.035].map(x => <mesh key={x} position={[x,1.12,.1]}><boxGeometry args={[.008,2.2,.008]} /><meshStandardMaterial color="#d8c6a3" /></mesh>)}
+    <group position={[3.52, .08, -3.34]}>
+      <group rotation={[0, -.08, -.1]}>
+        {[
+          [0, .25, .86, .34],
+          [0, .54, 1.02, .28],
+          [0, .8, .7, .24],
+          [0, 1.02, .52, .24],
+          [0, 1.24, .68, .24],
+        ].map((part, index) => (
+          <mesh key={index} position={[part[0], part[1], 0]} castShadow>
+            <boxGeometry args={[part[2], part[3], .22]} />
+            <meshStandardMaterial color={index % 2 ? '#a95d31' : '#bc7040'} roughness={.62} />
+          </mesh>
+        ))}
+        <mesh position={[0, .73, .125]}><boxGeometry args={[.23, .23, .025]} /><meshStandardMaterial color="#241914" roughness={.82} /></mesh>
+        <mesh position={[0, 1.92, 0]}><boxGeometry args={[.16, 1.55, .16]} /><meshStandardMaterial color="#4a2d20" roughness={.62} /></mesh>
+        <mesh position={[0, 2.74, 0]}><boxGeometry args={[.34, .34, .18]} /><meshStandardMaterial color="#5a3522" roughness={.62} /></mesh>
+        {[1.42, 1.65, 1.88, 2.11, 2.34].map((y) => <mesh key={y} position={[0, y, .09]}><boxGeometry args={[.18, .018, .012]} /><meshStandardMaterial color="#c3a777" metalness={.35} /></mesh>)}
+        {[-.04, 0, .04].map((x) => <mesh key={x} position={[x, 1.55, .105]}><boxGeometry args={[.009, 2.2, .009]} /><meshStandardMaterial color="#e2d1aa" metalness={.3} /></mesh>)}
       </group>
-      <group position={[1.02, .52, .05]} rotation={[0, -.15, .06]}>
-        {['#b14935','#315d72','#d0aa56','#ede2ca'].map((color,index) => <mesh key={color} position={[index*.07,index*.04,index*.045]} rotation={[0,0,.05*index]}><boxGeometry args={[.75,.78,.035]} /><meshStandardMaterial color={color} /></mesh>)}
+      <group position={[1.02, .48, .04]} rotation={[0, -.14, .04]}>
+        {[
+          ['#a84932', '#e4c267'], ['#2d586c', '#c5d6d3'], ['#c59b46', '#293f33'], ['#e6dcc5', '#844737'],
+        ].map((colors, index) => (
+          <group key={colors[0]} position={[index * .075, index * .045, index * .05]} rotation={[0, 0, .045 * index]}>
+            <mesh><boxGeometry args={[.78, .8, .045]} /><meshStandardMaterial color={colors[0]} roughness={.74} /></mesh>
+            <mesh position={[0, .12, .028]}><boxGeometry args={[.52, .15, .012]} /><meshStandardMaterial color={colors[1]} /></mesh>
+            <mesh position={[-.18, -.16, .028]}><boxGeometry args={[.16, .16, .012]} /><meshStandardMaterial color="#20231f" /></mesh>
+          </group>
+        ))}
       </group>
+    </group>
+  );
+}
+
+function RoomSurfaces() {
+  const tiles = useMemo(() => Array.from({ length: 120 }, (_, index) => ({
+    x: -4.375 + (index % 8) * 1.25,
+    z: -3.38 + Math.floor(index / 8) * 1.18,
+    color: ['#7d6a59', '#887361', '#756354', '#927966'][(index + Math.floor(index / 8)) % 4],
+  })), []);
+  return (
+    <>
+      <mesh position={[0, -.09, 4.5]} receiveShadow><boxGeometry args={[10.2, .16, 18]} /><meshStandardMaterial color="#4d443c" roughness={.94} /></mesh>
+      {tiles.map((tile, index) => (
+        <mesh key={index} position={[tile.x, .01, tile.z]} receiveShadow>
+          <boxGeometry args={[1.19, .035, 1.12]} />
+          <meshStandardMaterial color={tile.color} roughness={.91} />
+        </mesh>
+      ))}
+
+      <group position={[0, .055, 2.05]}>
+        <mesh receiveShadow><boxGeometry args={[7.35, .045, 5.25]} /><meshStandardMaterial color="#704033" roughness={.9} /></mesh>
+        {[[-3.33, 0, .22, 4.82], [3.33, 0, .22, 4.82], [0, -2.28, 6.88, .2], [0, 2.28, 6.88, .2]].map((part, index) => <mesh key={index} position={[part[0], .035, part[1]]}><boxGeometry args={[part[2], .035, part[3]]} /><meshStandardMaterial color="#d09b56" roughness={.82} /></mesh>)}
+        {[
+          [-2.85, -1.82], [2.85, -1.82], [-2.85, 1.82], [2.85, 1.82],
+        ].map((position, index) => <group key={index} position={[position[0], .065, position[1]]}>{[0, 1, 2].map((step) => <mesh key={step} position={[(index % 2 ? -1 : 1) * step * .18, 0, (index > 1 ? -1 : 1) * step * .18]}><boxGeometry args={[.23, .035, .23]} /><meshStandardMaterial color={step % 2 ? '#264f49' : '#d6b367'} /></mesh>)}</group>)}
+        <mesh position={[0, .04, 0]}><boxGeometry args={[3.2, .035, .18]} /><meshStandardMaterial color="#31534d" /></mesh>
+        <mesh position={[0, .04, 0]} rotation={[0, Math.PI / 2, 0]}><boxGeometry args={[2.3, .035, .18]} /><meshStandardMaterial color="#31534d" /></mesh>
+      </group>
+
+      <mesh position={[0, 3.2, -4]} receiveShadow><boxGeometry args={[10, 6.5, .14]} /><meshStandardMaterial color="#c6b797" roughness={.96} /></mesh>
+      {Array.from({ length: 13 }, (_, index) => <mesh key={index} position={[-4.7 + index * .78, 3.2, -3.918]}><boxGeometry args={[.075, 6.08, .018]} /><meshStandardMaterial color={index % 2 ? '#ae9d7d' : '#d7c9aa'} roughness={1} /></mesh>)}
+      {Array.from({ length: 11 }, (_, index) => <group key={index} position={[-4.45 + index * .88, 2.26 + (index % 2) * .7, -3.9]}><mesh><boxGeometry args={[.12, .12, .025]} /><meshStandardMaterial color="#879072" /></mesh><mesh position={[.12, .12, 0]}><boxGeometry args={[.12, .12, .025]} /><meshStandardMaterial color="#b08a59" /></mesh></group>)}
+
+      <mesh position={[-5, 3.2, 0]}><boxGeometry args={[.14, 6.5, 8]} /><meshStandardMaterial color="#beaf93" roughness={.96} /></mesh>
+      <mesh position={[5, 3.2, 0]}><boxGeometry args={[.14, 6.5, 8]} /><meshStandardMaterial color="#b9aa8f" roughness={.96} /></mesh>
+      {Array.from({ length: 10 }, (_, index) => <mesh key={`left-${index}`} position={[-4.918, 3.2, -3.55 + index * .78]}><boxGeometry args={[.018, 6.08, .065]} /><meshStandardMaterial color="#a8987c" roughness={1} /></mesh>)}
+      {Array.from({ length: 10 }, (_, index) => <mesh key={`right-${index}`} position={[4.918, 3.2, -3.55 + index * .78]}><boxGeometry args={[.018, 6.08, .065]} /><meshStandardMaterial color="#a29379" roughness={1} /></mesh>)}
+      <mesh position={[0, .22, -3.86]}><boxGeometry args={[10, .25, .16]} /><meshStandardMaterial color="#4d3828" roughness={.68} /></mesh>
+      <mesh position={[-4.86, .22, 0]}><boxGeometry args={[.16, .25, 8]} /><meshStandardMaterial color="#4d3828" roughness={.68} /></mesh>
+      <mesh position={[4.86, .22, 0]}><boxGeometry args={[.16, .25, 8]} /><meshStandardMaterial color="#4d3828" roughness={.68} /></mesh>
+    </>
+  );
+}
+
+function VoxelBeanbag() {
+  const layers = [
+    [3.15, .28, 1.5, .16, 0],
+    [2.82, .3, 1.34, .43, -.08],
+    [2.34, .3, 1.16, .7, -.2],
+    [1.72, .28, .94, .96, -.35],
+  ];
+  return (
+    <group position={[.35, .02, -2.62]} rotation={[0, Math.PI, 0]}>
+      {layers.map((layer, index) => <mesh key={index} position={[0, layer[3], layer[4]]} castShadow><boxGeometry args={[layer[0], layer[1], layer[2]]} /><meshStandardMaterial color={['#b9562d', '#c56234', '#d06d39', '#bb552d'][index]} roughness={.86} /></mesh>)}
+      {[-1.34, 1.34].map((x) => <mesh key={x} position={[x, .5, -.05]}><boxGeometry args={[.34, .62, 1.14]} /><meshStandardMaterial color="#ad4e2a" roughness={.9} /></mesh>)}
     </group>
   );
 }
@@ -348,7 +493,7 @@ function CameraRig({ lifted }: { lifted: boolean }) {
   const overheadPosition = useMemo(() => new THREE.Vector3(.35, 6.2, 4.45), []);
   const overheadTarget = useMemo(() => new THREE.Vector3(.35, 1.22, .18), []);
   const roomPosition = useMemo(() => new THREE.Vector3(0, 3.05, 7.6), []);
-  const roomTarget = useMemo(() => new THREE.Vector3(0, 2.88, 6.02), []);
+  const roomTarget = useMemo(() => new THREE.Vector3(0, 2.72, 4.6), []);
 
   useFrame((_, delta) => {
     if (!controls.current) return;
@@ -390,13 +535,13 @@ function CameraRig({ lifted }: { lifted: boolean }) {
       enableDamping
       dampingFactor={.065}
       rotateSpeed={.52}
-      zoomSpeed={.72}
-      minDistance={.92}
-      maxDistance={3.2}
-      minPolarAngle={.78}
-      maxPolarAngle={1.92}
-      minAzimuthAngle={-1.08}
-      maxAzimuthAngle={1.08}
+      zoomSpeed={1.05}
+      minDistance={.35}
+      maxDistance={8.5}
+      minPolarAngle={.88}
+      maxPolarAngle={1.88}
+      minAzimuthAngle={-.55}
+      maxAzimuthAngle={.55}
       touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
     />
   );
@@ -411,11 +556,7 @@ function Room({ lifted }: { lifted: boolean }) {
       <ambientLight intensity={1.15} color="#f7ead6" />
       <directionalLight position={[-3, 8, 5]} intensity={2.4} color="#fff0d2" castShadow shadow-mapSize={[2048, 2048]} />
       <pointLight position={[4.4, 4.2, .2]} intensity={13} distance={9} color="#c5e9e6" />
-      <mesh position={[0, -.08, 0]} receiveShadow><boxGeometry args={[10, .16, 12]} /><meshStandardMaterial color="#6b5542" roughness={.88} /></mesh>
-      {Array.from({ length: 16 }, (_, i) => <mesh key={i} position={[-4.7 + (i % 8) * 1.34, .015, -3.45 + Math.floor(i / 8) * 1.85]} rotation={[-Math.PI/2,0,(i%2?1:-1)*.015]} receiveShadow><planeGeometry args={[1.25,1.72]} /><meshStandardMaterial color={i%3===0?'#775d48':'#6d5542'} /></mesh>)}
-      <mesh position={[0, 3.2, -4]} receiveShadow><boxGeometry args={[10, 6.5, .14]} /><meshStandardMaterial color="#d4c7b4" roughness={.94} /></mesh>
-      <mesh position={[-5, 3.2, 0]}><boxGeometry args={[.14, 6.5, 8]} /><meshStandardMaterial color="#c6b7a2" /></mesh>
-      <mesh position={[5, 3.2, 0]}><boxGeometry args={[.14, 6.5, 8]} /><meshStandardMaterial color="#b5a58d" /></mesh>
+      <RoomSurfaces />
       <RoundedBox args={[8.05, .42, 3.62]} radius={.1} position={[0, 1.03, .58]} castShadow receiveShadow><meshStandardMaterial color="#724d37" roughness={.56} /></RoundedBox>
       <mesh position={[0, 1.25, .58]}><boxGeometry args={[7.7,.035,3.28]} /><meshStandardMaterial color="#895f43" roughness={.42} /></mesh>
       {[[-3.4,-.85],[3.4,-.85],[-3.4,1.22],[3.4,1.22]].map((p,index) => <mesh key={index} position={[p[0],.5,p[1]+.58]} castShadow><boxGeometry args={[.24,1.02,.24]} /><meshStandardMaterial color="#493226" /></mesh>)}
@@ -425,15 +566,11 @@ function Room({ lifted }: { lifted: boolean }) {
       <RainWindow />
       <WorldMap />
       <GuitarAndRecords />
-      <group position={[.35, .52, -2.7]} rotation={[0, Math.PI, 0]}>
-        <RoundedBox args={[3.24, 1.02, 1.52]} radius={.42} castShadow><meshStandardMaterial color="#c85f31" roughness={.82} /></RoundedBox>
-        <RoundedBox args={[2.7, .8, 1.28]} radius={.36} position={[0, .54, 0]} rotation={[-.12, 0, 0]}><meshStandardMaterial color="#d56d3b" roughness={.9} /></RoundedBox>
-      </group>
-      <group position={[2.05, .05, -2.95]}>{[-.22,0,.22].map((x,index)=><group key={x} position={[x,.52,index*.04]}><mesh><cylinderGeometry args={[.18,.24,.82,18]} /><meshStandardMaterial color={index===1?'#8a6244':'#6f8061'} /></mesh><mesh position={[0,.52,0]}><sphereGeometry args={[.28,12,9]} /><meshStandardMaterial color="#4e7352" /></mesh></group>)}</group>
-      <WallPhoto position={[-2.42, 3.78, -3.87]} rotation={-.045} large src={messiPhoto} />
-      <WallPhoto position={[-.42, 4.1, -3.87]} rotation={.06} src={jayPhoto} />
-      <WallPhoto position={[1.25, 3.55, -3.87]} rotation={-.04} src={friendsPhoto} />
-      <WallPhoto position={[2.8, 4.03, -3.87]} rotation={.065} src={haiziPhoto} />
+      <VoxelBeanbag />
+      <WallPhoto position={[-2.52, 3.82, -3.87]} rotation={-.045} format="large" src={messiPhoto} />
+      <WallPhoto position={[-.56, 4.18, -3.87]} rotation={.055} src={jayPhoto} />
+      <WallPhoto position={[1.22, 3.54, -3.87]} rotation={-.035} format="landscape" src={friendsPhoto} />
+      <WallPhoto position={[2.86, 4.12, -3.87]} rotation={.06} src={haiziPhoto} />
       <ContactShadows position={[0, .02, 0]} opacity={.42} scale={15} blur={2.1} far={9} />
     </>
   );
