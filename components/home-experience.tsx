@@ -3,15 +3,15 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Html, OrbitControls, RoundedBox, useTexture } from '@react-three/drei';
 import { Globe2 } from 'lucide-react';
-import Image, { type StaticImageData } from 'next/image';
+import type { StaticImageData } from 'next/image';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import type { Language } from '@/lib/content';
-import messiPhoto from '@/pic/梅西.png';
-import jayPhoto from '@/pic/Jay.png';
-import friendsPhoto from '@/pic/老友记五人.png';
-import haiziPhoto from '@/pic/海子.png';
+import messiPhoto from '@/pic/梅西-pixel.png';
+import jayPhoto from '@/pic/Jay-pixel.png';
+import friendsPhoto from '@/pic/老友记五人-pixel.png';
+import haiziPhoto from '@/pic/海子-pixel.png';
 import gardenBackdrop from '@/pic/jiangnan-garden.png';
 
 const WORDS = {
@@ -124,19 +124,26 @@ function FootballField() {
             <ringGeometry args={[.24, .255, 32, 1, side > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI]} />
             <meshBasicMaterial color="#f7f1df" />
           </mesh>
-          <group position={[side * 2.08, .33, 0]}>
-            <mesh><boxGeometry args={[.035, .48, 1.02]} /><meshStandardMaterial color="#ece8db" /></mesh>
-            <mesh position={[-side * .18, 0, 0]}><boxGeometry args={[.34, .035, 1.02]} /><meshStandardMaterial color="#ece8db" /></mesh>
-            {[-.38, 0, .38].map((z) => <mesh key={z} position={[-side * .18, 0, z]}><boxGeometry args={[.34, .012, .012]} /><meshStandardMaterial color="#ded8c7" /></mesh>)}
+          <group position={[side * 2.06, .145, 0]}>
+            {[-.5, .5].map((z) => <mesh key={`post-${z}`} position={[0, .31, z]} castShadow><cylinderGeometry args={[.026, .026, .62, 16]} /><meshStandardMaterial color="#f5f2e8" roughness={.46} /></mesh>)}
+            <mesh position={[0, .62, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow><cylinderGeometry args={[.026, .026, 1.05, 16]} /><meshStandardMaterial color="#f5f2e8" roughness={.46} /></mesh>
+            {[-.5, .5].map((z) => <mesh key={`depth-${z}`} position={[side * .15, .62, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.018, .018, .3, 12]} /><meshStandardMaterial color="#e8e4d8" roughness={.6} /></mesh>)}
+            <mesh position={[side * .3, .34, 0]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.018, .018, 1.02, 12]} /><meshStandardMaterial color="#e8e4d8" roughness={.6} /></mesh>
+            {[-.44, -.22, 0, .22, .44].map((z) => <mesh key={`net-v-${z}`} position={[side * .29, .31, z]}><boxGeometry args={[.009, .55, .009]} /><meshBasicMaterial color="#eeeade" transparent opacity={.72} /></mesh>)}
+            {[.08, .2, .32, .44, .56].map((y) => <mesh key={`net-h-${y}`} position={[side * .29, y, 0]}><boxGeometry args={[.009, .009, 1]} /><meshBasicMaterial color="#eeeade" transparent opacity={.72} /></mesh>)}
+            {[-.5, .5].flatMap((z) => [.1, .26, .42, .58].map((y) => <mesh key={`side-${z}-${y}`} position={[side * .15, y, z]}><boxGeometry args={[.29, .009, .009]} /><meshBasicMaterial color="#eeeade" transparent opacity={.62} /></mesh>))}
           </group>
         </group>
       ))}
       <group ref={ball} position={[.15, .31, .1]}>
-        <mesh castShadow><icosahedronGeometry args={[.14, 3]} /><meshStandardMaterial color="#f7f3e8" roughness={.6} /></mesh>
-        {[[0,.142,0],[.11,.06,.07],[-.09,.07,-.08],[.04,-.08,.11],[-.1,-.07,.06]].map((p, index) => (
-          <mesh key={index} position={p as [number, number, number]} rotation={[-Math.PI / 2, 0, index]}>
-            <circleGeometry args={[.03, 5]} /><meshStandardMaterial color="#22201d" />
-          </mesh>
+        <mesh castShadow><sphereGeometry args={[.14, 32, 24]} /><meshPhysicalMaterial color="#f7f4eb" roughness={.5} clearcoat={.12} /></mesh>
+        {[
+          [0, 0, 0], [Math.PI, 0, 0], [Math.PI / 2, 0, 0], [-Math.PI / 2, 0, 0],
+          [0, Math.PI / 2, 0], [0, -Math.PI / 2, 0], [.68, .7, 0], [-.68, .7, 0], [.68, -.7, 0], [-.68, -.7, 0],
+        ].map((rotation, index) => (
+          <group key={index} rotation={rotation as [number, number, number]}>
+            <mesh position={[0, 0, .1415]}><circleGeometry args={[.032, 5]} /><meshStandardMaterial color="#1d1e1c" roughness={.62} polygonOffset polygonOffsetFactor={-2} /></mesh>
+          </group>
         ))}
       </group>
     </group>
@@ -167,10 +174,11 @@ function ScholarSet() {
         { z: .22, color: '#9c512f', angle: -.18 },
         { z: -.04, color: '#aa7a39', angle: .1 },
       ].map((brush) => (
-        <group key={brush.z} position={[.05, .15, brush.z]} rotation={[0, brush.angle, 0]}>
-          <mesh position={[0, 0, -.2]} castShadow><boxGeometry args={[.045, .045, .92]} /><meshStandardMaterial color={brush.color} roughness={.58} /></mesh>
-          <mesh position={[0, 0, -.71]}><boxGeometry args={[.08, .06, .18]} /><meshStandardMaterial color="#28201a" roughness={.86} /></mesh>
-          <mesh position={[0, 0, .3]}><boxGeometry args={[.07, .065, .08]} /><meshStandardMaterial color="#d1af66" metalness={.55} roughness={.32} /></mesh>
+        <group key={brush.z} position={[.05, .14, brush.z]} rotation={[0, brush.angle, 0]}>
+          <mesh position={[0, .035, -.12]} rotation={[Math.PI / 2, 0, 0]} castShadow><cylinderGeometry args={[.019, .019, .88, 16]} /><meshStandardMaterial color={brush.color} roughness={.42} /></mesh>
+          <mesh position={[0, .035, -.585]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.032, .027, .1, 16]} /><meshStandardMaterial color="#c7a45b" metalness={.62} roughness={.28} /></mesh>
+          <mesh position={[0, .035, -.74]} rotation={[Math.PI / 2, 0, 0]}><coneGeometry args={[.046, .23, 12]} /><meshStandardMaterial color="#211a16" roughness={.92} /></mesh>
+          <mesh position={[0, .035, .34]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.025, .019, .045, 12]} /><meshStandardMaterial color="#d3b66f" metalness={.48} roughness={.3} /></mesh>
         </group>
       ))}
       <group position={[-.98, .12, .32]}>
@@ -198,6 +206,34 @@ function VoxelPuzzle({ position, rotation = 0, size = .54 }: { position: [number
   );
 }
 
+function PyramidPuzzle({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[.08, -.28, -.05]}>
+      <mesh castShadow><tetrahedronGeometry args={[.4, 0]} /><meshStandardMaterial color="#171a18" roughness={.56} /></mesh>
+      {[
+        [0, .2, .22, '#e6c63e'],
+        [-.18, -.08, .1, '#d94d39'],
+        [.18, -.08, .1, '#327b58'],
+        [0, -.08, -.18, '#376ca0'],
+      ].map((piece, index) => <mesh key={index} position={[piece[0] as number, piece[1] as number, piece[2] as number]} scale={.46}><tetrahedronGeometry args={[.38, 0]} /><meshStandardMaterial color={piece[3] as string} roughness={.48} /></mesh>)}
+    </group>
+  );
+}
+
+function MirrorPuzzle({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position} rotation={[.06, .24, -.04]}>
+      <mesh castShadow><boxGeometry args={[.54, .54, .54]} /><meshStandardMaterial color="#b9bdba" metalness={.88} roughness={.2} /></mesh>
+      {[-.13, .07].map((x) => <mesh key={`front-v-${x}`} position={[x, 0, .276]}><boxGeometry args={[.018, .52, .012]} /><meshStandardMaterial color="#282c2a" metalness={.45} /></mesh>)}
+      {[-.1, .12].map((y) => <mesh key={`front-h-${y}`} position={[0, y, .276]}><boxGeometry args={[.52, .018, .012]} /><meshStandardMaterial color="#282c2a" metalness={.45} /></mesh>)}
+      {[-.13, .07].map((x) => <mesh key={`top-v-${x}`} position={[x, .276, 0]}><boxGeometry args={[.018, .012, .52]} /><meshStandardMaterial color="#303432" metalness={.45} /></mesh>)}
+      {[-.11, .1].map((z) => <mesh key={`top-h-${z}`} position={[0, .276, z]}><boxGeometry args={[.52, .012, .018]} /><meshStandardMaterial color="#303432" metalness={.45} /></mesh>)}
+      {[-.1, .12].map((y) => <mesh key={`side-h-${y}`} position={[.276, y, 0]}><boxGeometry args={[.012, .018, .52]} /><meshStandardMaterial color="#252927" metalness={.45} /></mesh>)}
+      {[-.12, .08].map((z) => <mesh key={`side-v-${z}`} position={[.276, 0, z]}><boxGeometry args={[.012, .52, .018]} /><meshStandardMaterial color="#252927" metalness={.45} /></mesh>)}
+    </group>
+  );
+}
+
 function CabinetAndLamp() {
   return (
     <group>
@@ -208,9 +244,9 @@ function CabinetAndLamp() {
         <mesh position={[0, .56, .445]}><boxGeometry args={[2.44, .035, .025]} /><meshStandardMaterial color="#35251d" /></mesh>
         {[-.62, .62].map((x) => <mesh key={x} position={[x, .08, .458]}><boxGeometry args={[.1, .1, .045]} /><meshStandardMaterial color="#c69a4d" metalness={.66} roughness={.3} /></mesh>)}
 
-        <VoxelPuzzle position={[-.7, 1.15, .02]} rotation={-.32} size={.56} />
-        <VoxelPuzzle position={[.03, 1.08, .02]} rotation={.28} size={.46} />
-        <VoxelPuzzle position={[.62, 1.12, .03]} rotation={-.12} size={.5} />
+        <VoxelPuzzle position={[-.68, 1.14, .02]} rotation={-.32} size={.5} />
+        <PyramidPuzzle position={[0, 1.18, .02]} />
+        <MirrorPuzzle position={[.68, 1.14, .03]} />
 
         {[-1.08, 1.08].map((x, index) => (
           <group key={x} position={[x, 1.05, .02]}>
@@ -231,15 +267,25 @@ function CabinetAndLamp() {
   );
 }
 
-type PhotoFormat = 'portrait' | 'large' | 'landscape';
+type PhotoFormat = 'square' | 'hero' | 'landscape';
 
-function WallPhoto({ position, rotation = 0, src, format = 'portrait' }: { position: [number, number, number]; rotation?: number; src: StaticImageData; format?: PhotoFormat }) {
+function WallPhoto({ position, rotation = 0, src, format = 'square' }: { position: [number, number, number]; rotation?: number; src: StaticImageData; format?: PhotoFormat }) {
   const dimensions: Record<PhotoFormat, [number, number]> = {
-    portrait: [1.42, 1.82],
-    large: [2.15, 2.58],
+    square: [1.46, 1.46],
+    hero: [2.48, 1.5],
     landscape: [2.12, 1.28],
   };
   const [width, height] = dimensions[format];
+  const sourceTexture = useTexture(src.src);
+  const texture = useMemo(() => {
+    const nextTexture = sourceTexture.clone();
+    nextTexture.colorSpace = THREE.SRGBColorSpace;
+    nextTexture.magFilter = THREE.NearestFilter;
+    nextTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    nextTexture.anisotropy = 8;
+    nextTexture.needsUpdate = true;
+    return nextTexture;
+  }, [sourceTexture]);
   return (
     <group position={position} rotation={[0, 0, rotation]}>
       <mesh castShadow><boxGeometry args={[width + .24, height + .24, .14]} /><meshStandardMaterial color="#2b2018" roughness={.56} /></mesh>
@@ -250,9 +296,7 @@ function WallPhoto({ position, rotation = 0, src, format = 'portrait' }: { posit
         [-width / 2 - .07, -height / 2 - .07],
         [width / 2 + .07, -height / 2 - .07],
       ].map((corner, index) => <mesh key={index} position={[corner[0], corner[1], .13]}><boxGeometry args={[.07, .07, .035]} /><meshStandardMaterial color="#a37b38" metalness={.64} roughness={.34} /></mesh>)}
-      <Html transform position={[0, 0, .118]} distanceFactor={5.65} style={{ pointerEvents: 'none' }}>
-        <div className={`room-photo ${format}`}><Image src={src} alt="" fill sizes={format === 'large' ? '170px' : format === 'landscape' ? '160px' : '112px'} priority /></div>
-      </Html>
+      <mesh position={[0, 0, .118]}><planeGeometry args={[width, height]} /><meshBasicMaterial map={texture} toneMapped={false} /></mesh>
     </group>
   );
 }
@@ -317,14 +361,16 @@ function RainWindow() {
 type GeoPoint = [number, number];
 
 const CONTINENT_OUTLINES: GeoPoint[][] = [
-  [[-168, 70], [-150, 58], [-130, 54], [-124, 42], [-108, 28], [-98, 18], [-82, 24], [-80, 31], [-66, 46], [-58, 55], [-75, 65], [-100, 72], [-135, 74]],
-  [[-82, 12], [-70, 10], [-50, 2], [-36, -16], [-48, -34], [-55, -54], [-68, -50], [-73, -30], [-80, -6]],
-  [[-10, 35], [2, 43], [12, 44], [20, 54], [32, 61], [22, 71], [3, 70], [-10, 58]],
-  [[-18, 34], [8, 38], [32, 31], [50, 11], [42, -12], [31, -35], [12, -35], [-3, -20], [-13, 4]],
-  [[24, 39], [40, 58], [62, 70], [103, 76], [143, 63], [176, 51], [158, 34], [141, 9], [116, 2], [104, 22], [80, 8], [60, 27], [42, 32]],
-  [[112, -11], [135, -9], [154, -20], [151, -39], [130, -44], [113, -28]],
+  [[-168, 71], [-151, 76], [-126, 72], [-98, 73], [-81, 64], [-63, 62], [-54, 54], [-61, 47], [-73, 42], [-80, 30], [-87, 19], [-97, 16], [-107, 23], [-117, 32], [-124, 41], [-126, 50], [-139, 58]],
+  [[-82, 12], [-70, 11], [-60, 7], [-50, 2], [-43, -8], [-35, -21], [-44, -31], [-52, -45], [-57, -55], [-67, -50], [-73, -34], [-75, -15], [-81, -2]],
+  [[-11, 36], [-3, 43], [5, 43], [11, 47], [20, 45], [27, 51], [33, 61], [25, 70], [12, 72], [-4, 63], [-10, 55]],
+  [[-18, 35], [-5, 37], [10, 36], [22, 32], [34, 30], [43, 13], [51, 10], [43, -12], [36, -23], [31, -34], [18, -35], [9, -29], [1, -20], [-5, -4], [-15, 8]],
+  [[24, 39], [37, 51], [45, 61], [61, 70], [86, 76], [111, 72], [136, 67], [160, 58], [178, 51], [170, 42], [154, 35], [145, 20], [130, 8], [115, 5], [104, 20], [92, 9], [78, 7], [68, 22], [55, 28], [44, 34], [34, 32]],
+  [[112, -11], [128, -9], [139, -12], [154, -20], [151, -39], [132, -44], [119, -36], [113, -28]],
   [[-54, 60], [-42, 60], [-20, 72], [-28, 82], [-48, 84], [-62, 74]],
-  [[130, 31], [143, 45], [146, 42], [137, 30]],
+  [[130, 31], [136, 35], [141, 45], [146, 42], [142, 34], [137, 30]],
+  [[-10, 50], [-3, 51], [-2, 59], [-7, 58]],
+  [[96, 5], [108, 6], [119, 1], [130, -5], [121, -9], [106, -7]],
 ];
 
 function isInsideOutline(lon: number, lat: number, outline: GeoPoint[]) {
@@ -341,8 +387,8 @@ function WorldMap() {
   const mapWidth = 3.72;
   const mapHeight = 2.15;
   const segments = useMemo(() => {
-    const columns = 52;
-    const rows = 26;
+    const columns = 64;
+    const rows = 32;
     const cellWidth = mapWidth / columns;
     const cellHeight = mapHeight / rows;
     const result: { x: number; y: number; width: number; color: string }[] = [];
@@ -377,10 +423,10 @@ function WorldMap() {
       {[-1.43, -.72, 0, .72, 1.43].map((x) => <mesh key={x} position={[x, 0, .096]}><boxGeometry args={[.012, 2.14, .01]} /><meshBasicMaterial color="#d7e4dc" transparent opacity={.2} /></mesh>)}
       {[-.78, -.39, 0, .39, .78].map((y) => <mesh key={y} position={[0, y, .096]}><boxGeometry args={[3.7, .012, .01]} /><meshBasicMaterial color="#d7e4dc" transparent opacity={.2} /></mesh>)}
       {segments.map((segment, index) => (
-        <mesh key={index} position={[segment.x, segment.y, .112]}>
-          <boxGeometry args={[segment.width, mapHeight / 26 * .9, .035]} />
-          <meshStandardMaterial color={segment.color} roughness={.88} />
-        </mesh>
+        <group key={index}>
+          <mesh position={[segment.x, segment.y, .109]}><boxGeometry args={[segment.width + .022, mapHeight / 32 * 1.04, .028]} /><meshStandardMaterial color="#394338" roughness={.9} /></mesh>
+          <mesh position={[segment.x, segment.y, .13]}><boxGeometry args={[segment.width, mapHeight / 32 * .82, .03]} /><meshStandardMaterial color={segment.color} roughness={.86} /></mesh>
+        </group>
       ))}
       {[
         [-1.96, 1.18], [1.96, 1.18], [-1.96, -1.18], [1.96, -1.18],
@@ -493,7 +539,7 @@ function CameraRig({ lifted }: { lifted: boolean }) {
   const overheadPosition = useMemo(() => new THREE.Vector3(.35, 6.2, 4.45), []);
   const overheadTarget = useMemo(() => new THREE.Vector3(.35, 1.22, .18), []);
   const roomPosition = useMemo(() => new THREE.Vector3(0, 3.05, 7.6), []);
-  const roomTarget = useMemo(() => new THREE.Vector3(0, 2.72, 4.6), []);
+  const roomTarget = useMemo(() => new THREE.Vector3(.25, 2.1, .2), []);
 
   useFrame((_, delta) => {
     if (!controls.current) return;
@@ -536,12 +582,12 @@ function CameraRig({ lifted }: { lifted: boolean }) {
       dampingFactor={.065}
       rotateSpeed={.52}
       zoomSpeed={1.05}
-      minDistance={.35}
-      maxDistance={8.5}
+      minDistance={2.35}
+      maxDistance={8.8}
       minPolarAngle={.88}
       maxPolarAngle={1.88}
-      minAzimuthAngle={-.55}
-      maxAzimuthAngle={.55}
+      minAzimuthAngle={-.48}
+      maxAzimuthAngle={.48}
       touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
     />
   );
@@ -567,10 +613,10 @@ function Room({ lifted }: { lifted: boolean }) {
       <WorldMap />
       <GuitarAndRecords />
       <VoxelBeanbag />
-      <WallPhoto position={[-2.52, 3.82, -3.87]} rotation={-.045} format="large" src={messiPhoto} />
-      <WallPhoto position={[-.56, 4.18, -3.87]} rotation={.055} src={jayPhoto} />
-      <WallPhoto position={[1.22, 3.54, -3.87]} rotation={-.035} format="landscape" src={friendsPhoto} />
-      <WallPhoto position={[2.86, 4.12, -3.87]} rotation={.06} src={haiziPhoto} />
+      <WallPhoto position={[-2.72, 4.05, -3.87]} rotation={-.045} format="hero" src={messiPhoto} />
+      <WallPhoto position={[-.72, 4.35, -3.865]} rotation={.055} src={jayPhoto} />
+      <WallPhoto position={[1.08, 3.62, -3.86]} rotation={-.035} format="landscape" src={friendsPhoto} />
+      <WallPhoto position={[2.9, 4.28, -3.855]} rotation={.06} src={haiziPhoto} />
       <ContactShadows position={[0, .02, 0]} opacity={.42} scale={15} blur={2.1} far={9} />
     </>
   );

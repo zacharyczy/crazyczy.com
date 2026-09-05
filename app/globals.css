@@ -198,7 +198,7 @@
 }
 .intro-type {
   position: absolute;
-  z-index: 3;
+  z-index: 6;
   top: 44%;
   left: 3.2%;
   width: min(520px, 43vw);
@@ -216,7 +216,7 @@
 .intro-type h1 {
   margin: 0;
   font-family: 'Fusion Pixel', ui-monospace, monospace;
-  font-size: clamp(1.25rem, 2.25vw, 2rem);
+  font-size: clamp(1.42rem, 2.55vw, 2.3rem);
   font-weight: 400;
   line-height: 1.34;
   letter-spacing: .015em;
@@ -311,23 +311,6 @@
   background: #24563f;
   color: #fff;
   box-shadow: none;
-}
-.room-photo { position: relative; overflow: hidden; background: #201f1c; }
-.room-photo.portrait { width: 112px; height: 143px; }
-.room-photo.large { width: 170px; height: 204px; }
-.room-photo.landscape { width: 167px; height: 101px; }
-.room-photo img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; filter: saturate(.78) contrast(1.15) brightness(.96); }
-.room-photo.landscape img { object-fit: contain; }
-.room-photo::after {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgb(255 255 255 / 8%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(20 25 21 / 7%) 1px, transparent 1px);
-  background-size: 3px 3px;
-  mix-blend-mode: soft-light;
-  content: "";
 }
 .map-pin { display: block; font-size: 1.3rem; filter: drop-shadow(0 2px 2px rgb(0 0 0 / 38%)); }
 
@@ -461,9 +444,6 @@
   .room-language { top: .9rem; right: .9rem; }
   .room-hint { left: 1.35rem; bottom: 5.2rem; max-width: 64vw; line-height: 1.5; }
   .enter-reading { right: .9rem; bottom: 1rem; }
-  .room-photo.portrait { width: 86px; height: 110px; }
-  .room-photo.large { width: 124px; height: 152px; }
-  .room-photo.landscape { width: 126px; height: 76px; }
   .home-return { grid-template-columns: 1fr; gap: 1.6rem; padding: 3.5rem 0 2.75rem; }
   .home-return h1 { font-size: 2.65rem; }
   .writing-showcase { padding: 3rem 0 5rem; }
