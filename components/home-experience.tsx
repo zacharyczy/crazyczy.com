@@ -121,13 +121,13 @@ function FootballField() {
       <mesh position={[0, .136, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.025, 18]} /><meshBasicMaterial color="#f7f1df" /></mesh>
       {[-1, 1].map((side) => (
         <group key={side}>
-          <group position={[side * 1.69, .138, 0]}>
-            <mesh position={[-side * .19, 0, -.48]}><boxGeometry args={[.38, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>
-            <mesh position={[-side * .19, 0, .48]}><boxGeometry args={[.38, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>
-            <mesh position={[-side * .38, 0, 0]}><boxGeometry args={[.018, .014, .98]} /><meshBasicMaterial color="#f7f1df" /></mesh>
-          </group>
-          <mesh position={[side * 1.63, .133, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[.24, .255, 32, 1, side > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI]} />
+          <mesh position={[side * 1.35, .138, 0]}><boxGeometry args={[.018, .014, 1.38]} /><meshBasicMaterial color="#f7f1df" /></mesh>
+          {[-.68, .68].map((z) => <mesh key={`penalty-side-${z}`} position={[side * 1.71, .138, z]}><boxGeometry args={[.72, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>)}
+          <mesh position={[side * 1.73, .139, 0]}><boxGeometry args={[.018, .014, .74]} /><meshBasicMaterial color="#f7f1df" /></mesh>
+          {[-.36, .36].map((z) => <mesh key={`goal-area-${z}`} position={[side * 1.9, .139, z]}><boxGeometry args={[.34, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>)}
+          <mesh position={[side * 1.49, .141, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.022, 16]} /><meshBasicMaterial color="#f7f1df" /></mesh>
+          <mesh position={[side * 1.49, .137, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[.29, .305, 40, 1, side > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI]} />
             <meshBasicMaterial color="#f7f1df" />
           </mesh>
           <group position={[side * 2.08, .145, 0]}>
@@ -375,18 +375,25 @@ type GeoPoint = [number, number];
 const CONTINENT_OUTLINES: GeoPoint[][] = [
   [[-168, 71], [-151, 76], [-132, 73], [-118, 69], [-102, 73], [-82, 68], [-61, 61], [-54, 52], [-62, 46], [-71, 44], [-75, 39], [-81, 31], [-88, 19], [-96, 15], [-105, 20], [-113, 29], [-120, 35], [-125, 43], [-127, 51], [-139, 59], [-154, 61]],
   [[-82, 12], [-74, 11], [-66, 9], [-58, 5], [-51, 1], [-45, -8], [-39, -15], [-35, -23], [-42, -33], [-49, -42], [-54, -51], [-63, -55], [-68, -48], [-72, -38], [-74, -25], [-77, -13], [-81, -2]],
-  [[-11, 36], [-8, 43], [-1, 44], [3, 49], [8, 50], [9, 54], [5, 58], [10, 61], [16, 58], [22, 60], [29, 66], [25, 71], [16, 72], [7, 66], [-1, 63], [-7, 57], [-10, 50]],
+  [[-10, 36], [-9, 43], [-5, 44], [-4, 48], [-1, 50], [2, 51], [4, 53], [8, 54], [12, 55], [16, 54], [20, 55], [24, 58], [30, 59], [32, 54], [29, 49], [27, 45], [24, 41], [20, 39], [16, 38], [13, 43], [10, 44], [7, 43], [3, 43], [0, 42], [-4, 43], [-7, 41]],
   [[-18, 35], [-8, 37], [2, 37], [11, 36], [20, 33], [28, 31], [34, 27], [39, 20], [44, 12], [51, 10], [48, 2], [43, -10], [40, -18], [34, -27], [27, -34], [18, -35], [10, -30], [4, -22], [-2, -10], [-7, 2], [-13, 10], [-17, 22]],
-  [[24, 39], [29, 43], [36, 48], [34, 53], [29, 57], [24, 61], [31, 66], [43, 69], [55, 73], [72, 76], [91, 78], [111, 75], [131, 70], [149, 65], [165, 59], [179, 52], [176, 46], [164, 43], [153, 40], [145, 36], [139, 38], [132, 43], [126, 39], [122, 31], [116, 25], [109, 20], [106, 13], [101, 9], [96, 18], [91, 23], [86, 22], [81, 8], [76, 9], [72, 20], [67, 24], [59, 25], [53, 29], [47, 31], [42, 36], [36, 37], [31, 34]],
+  [[24, 39], [29, 43], [34, 48], [35, 54], [30, 58], [25, 61], [31, 66], [43, 69], [55, 73], [72, 76], [91, 78], [111, 75], [131, 70], [149, 65], [165, 59], [179, 52], [176, 47], [166, 45], [156, 43], [148, 40], [142, 42], [139, 46], [135, 48], [132, 45], [130, 42], [127, 41], [126, 38], [128, 35], [125, 34], [123, 31], [122, 28], [121, 24], [116, 23], [111, 21], [108, 18], [106, 12], [102, 8], [98, 11], [96, 18], [92, 22], [88, 23], [85, 20], [82, 13], [80, 8], [77, 8], [74, 18], [70, 23], [65, 25], [59, 25], [54, 29], [49, 30], [45, 34], [41, 37], [36, 37], [31, 34]],
   [[112, -11], [128, -9], [139, -12], [154, -20], [151, -39], [132, -44], [119, -36], [113, -28]],
   [[-54, 60], [-42, 60], [-20, 72], [-28, 82], [-48, 84], [-62, 74]],
-  [[130, 31], [136, 35], [141, 45], [146, 42], [142, 34], [137, 30]],
-  [[-10, 50], [-3, 51], [-2, 59], [-7, 58]],
+  [[130, 31], [133, 33], [135, 36], [138, 40], [140, 44], [143, 45], [146, 42], [144, 38], [142, 34], [138, 31], [135, 30]],
+  [[-10, 50], [-6, 50], [-4, 52], [-5, 55], [-3, 58], [-6, 59], [-9, 57]],
+  [[-10, 51], [-9, 55], [-7, 56], [-6, 53], [-7, 51]],
+  [[-25, 63], [-13, 63], [-14, 67], [-20, 67], [-24, 66]],
+  [[5, 58], [7, 62], [11, 66], [15, 70], [20, 71], [25, 69], [29, 65], [28, 61], [24, 58], [20, 56], [15, 57], [11, 59]],
+  [[7, 45], [10, 46], [12, 44], [13, 42], [16, 39], [17, 38], [15, 37], [13, 39], [11, 41], [10, 44]],
   [[96, 5], [108, 6], [119, 1], [130, -5], [121, -9], [106, -7]],
   [[34, 30], [42, 30], [49, 24], [56, 17], [51, 12], [44, 13], [39, 20]],
   [[77, 30], [88, 27], [92, 21], [86, 8], [79, 7], [74, 19]],
   [[119, 23], [122, 25], [122, 18], [120, 15]],
-  [[120, 14], [124, 12], [126, 8], [123, 5], [120, 8]],
+  [[120, 14], [123, 14], [125, 11], [126, 8], [124, 5], [121, 7]],
+  [[125, 39], [129, 41], [130, 38], [129, 35], [126, 34]],
+  [[121, 25], [123, 25], [122, 22], [121, 21]],
+  [[141, 45], [145, 46], [146, 43], [144, 41], [142, 42]],
   [[47, -13], [50, -16], [49, -25], [45, -24], [44, -17]],
 ];
 
@@ -404,8 +411,8 @@ function WorldMap() {
   const mapWidth = 3.72;
   const mapHeight = 2.15;
   const segments = useMemo(() => {
-    const columns = 88;
-    const rows = 44;
+    const columns = 144;
+    const rows = 72;
     const cellWidth = mapWidth / columns;
     const cellHeight = mapHeight / rows;
     const result: { x: number; y: number; width: number; color: string }[] = [];
@@ -441,8 +448,8 @@ function WorldMap() {
       {[-.78, -.39, 0, .39, .78].map((y) => <mesh key={y} position={[0, y, .096]}><boxGeometry args={[3.7, .012, .01]} /><meshBasicMaterial color="#d7e4dc" transparent opacity={.2} /></mesh>)}
       {segments.map((segment, index) => (
         <group key={index}>
-          <mesh position={[segment.x, segment.y, .109]}><boxGeometry args={[segment.width + .018, mapHeight / 44 * 1.05, .028]} /><meshStandardMaterial color="#394338" roughness={.9} /></mesh>
-          <mesh position={[segment.x, segment.y, .13]}><boxGeometry args={[segment.width, mapHeight / 44 * .8, .03]} /><meshStandardMaterial color={segment.color} roughness={.86} /></mesh>
+          <mesh position={[segment.x, segment.y, .109]}><boxGeometry args={[segment.width + .012, mapHeight / 72 * 1.08, .028]} /><meshStandardMaterial color="#394338" roughness={.9} /></mesh>
+          <mesh position={[segment.x, segment.y, .13]}><boxGeometry args={[segment.width, mapHeight / 72 * .78, .03]} /><meshStandardMaterial color={segment.color} roughness={.86} /></mesh>
         </group>
       ))}
       {[
@@ -550,16 +557,37 @@ function CeilingPendant() {
 }
 
 function VoxelBeanbag() {
-  const layers = [
-    [3.15, .28, 1.5, .16, 0],
-    [2.82, .3, 1.34, .43, -.08],
-    [2.34, .3, 1.16, .7, -.2],
-    [1.72, .28, .94, .96, -.35],
-  ];
   return (
-    <group position={[.35, .02, 5.7]} rotation={[0, Math.PI, 0]}>
-      {layers.map((layer, index) => <mesh key={index} position={[0, layer[3], layer[4]]} castShadow><boxGeometry args={[layer[0], layer[1], layer[2]]} /><meshStandardMaterial color={['#b9562d', '#c56234', '#d06d39', '#bb552d'][index]} roughness={.86} /></mesh>)}
-      {[-1.34, 1.34].map((x) => <mesh key={x} position={[x, .5, -.05]}><boxGeometry args={[.34, .62, 1.14]} /><meshStandardMaterial color="#ad4e2a" roughness={.9} /></mesh>)}
+    <group position={[.35, .03, 5.62]} rotation={[0, Math.PI, 0]}>
+      <mesh position={[0, .46, -.03]} scale={[1.72, .62, 1.12]} castShadow receiveShadow>
+        <sphereGeometry args={[1, 28, 18]} />
+        <meshStandardMaterial color="#a94725" roughness={.9} />
+      </mesh>
+      <mesh position={[0, .67, .18]} scale={[1.26, .38, .8]} castShadow>
+        <sphereGeometry args={[1, 28, 18]} />
+        <meshStandardMaterial color="#d9793c" roughness={.88} />
+      </mesh>
+      {[-.74, 0, .74].map((x, index) => (
+        <mesh key={`nest-back-${x}`} position={[x, 1.08 + (index === 1 ? .14 : 0), -.52]} scale={[.72, .82, .52]} castShadow>
+          <sphereGeometry args={[1, 24, 16]} />
+          <meshStandardMaterial color={index === 1 ? '#c55d2d' : '#b9532a'} roughness={.9} />
+        </mesh>
+      ))}
+      {[-1, 1].map((side) => (
+        <mesh key={`nest-arm-${side}`} position={[side * 1.28, .72, -.02]} rotation={[0, 0, side * -.16]} scale={[.48, .7, .9]} castShadow>
+          <sphereGeometry args={[1, 24, 16]} />
+          <meshStandardMaterial color="#bd572b" roughness={.9} />
+        </mesh>
+      ))}
+      <mesh position={[0, .84, -.32]} scale={[1.05, .34, .26]} castShadow>
+        <sphereGeometry args={[1, 24, 14]} />
+        <meshStandardMaterial color="#e08a48" roughness={.86} />
+      </mesh>
+      <mesh position={[0, .68, .17]} rotation={[Math.PI / 2, 0, 0]} scale={[1.3, .86, 1]}>
+        <torusGeometry args={[.86, .055, 8, 36]} />
+        <meshStandardMaterial color="#8f371f" roughness={.82} />
+      </mesh>
+      {[-.62, 0, .62].map((x) => <mesh key={`tuft-${x}`} position={[x, .99, -.48]}><sphereGeometry args={[.055, 12, 8]} /><meshStandardMaterial color="#7f2f1d" roughness={.75} /></mesh>)}
     </group>
   );
 }
@@ -574,7 +602,7 @@ function CameraRig({ lifted }: { lifted: boolean }) {
   const overheadPosition = useMemo(() => new THREE.Vector3(.35, 6.2, 4.45), []);
   const overheadTarget = useMemo(() => new THREE.Vector3(.35, 1.22, .18), []);
   const roomPosition = useMemo(() => new THREE.Vector3(0, 2.7, 4.35), []);
-  const roomTarget = useMemo(() => new THREE.Vector3(.25, 1.68, .18), []);
+  const roomTarget = useMemo(() => new THREE.Vector3(.2, 2, -.55), []);
 
   useFrame((_, delta) => {
     if (!controls.current) return;
@@ -617,10 +645,11 @@ function CameraRig({ lifted }: { lifted: boolean }) {
       dampingFactor={.065}
       rotateSpeed={.68}
       zoomSpeed={1.3}
-      panSpeed={.72}
+      panSpeed={.9}
       zoomToCursor
-      minDistance={.68}
-      maxDistance={5.15}
+      screenSpacePanning
+      minDistance={.2}
+      maxDistance={5.35}
       minPolarAngle={.72}
       maxPolarAngle={1.84}
       touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
@@ -649,10 +678,10 @@ function Room({ lifted }: { lifted: boolean }) {
       <WorldMap />
       <GuitarAndRecords />
       <VoxelBeanbag />
-      <WallPhoto position={[-4.1, 4.15, -6.37]} rotation={-.045} format="hero" src={messiPhoto} />
-      <WallPhoto position={[-1.65, 4.45, -6.365]} rotation={.055} src={jayPhoto} />
-      <WallPhoto position={[.55, 3.68, -6.36]} rotation={-.035} format="landscape" src={friendsPhoto} />
-      <WallPhoto position={[3.55, 4.32, -6.365]} rotation={.06} format="landscape" src={tagorePhoto} />
+      <WallPhoto position={[-3.55, 4.15, -6.37]} rotation={-.045} format="hero" src={messiPhoto} />
+      <WallPhoto position={[-1.22, 4.45, -6.365]} rotation={.055} src={jayPhoto} />
+      <WallPhoto position={[.78, 3.68, -6.36]} rotation={-.035} format="landscape" src={friendsPhoto} />
+      <WallPhoto position={[3.4, 4.32, -6.365]} rotation={.06} format="hero" src={tagorePhoto} />
       <ContactShadows position={[0, .02, 0]} opacity={.42} scale={15} blur={2.1} far={9} />
     </>
   );
