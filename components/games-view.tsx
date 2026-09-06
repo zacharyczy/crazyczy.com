@@ -1,3 +1,4 @@
+import { gameCatalogue } from '@/lib/games';
 import type { Language } from '@/lib/content';
 import { copy } from '@/lib/copy';
 import { GameBest } from './game-best';
@@ -5,26 +6,7 @@ import { SiteShell } from './site-shell';
 
 export function GamesView({ lang }: { lang: Language }) {
   const t = copy[lang];
-  const games = [
-    {
-      slug: 'snake',
-      number: '01',
-      title: lang === 'zh' ? '贪吃蛇' : 'Snake',
-      description: lang === 'zh' ? '吃掉像素，避开墙壁和自己。速度会随分数提升。' : 'Eat pixels, avoid the walls and yourself. The pace rises with your score.',
-      controls: lang === 'zh' ? '方向键 / WASD / 触屏' : 'Arrow keys / WASD / touch',
-      storageKey: 'crazyczy-snake-best',
-      art: '◆··■··◆',
-    },
-    {
-      slug: 'starflight',
-      number: '02',
-      title: lang === 'zh' ? '星际飞行' : 'Starflight',
-      description: lang === 'zh' ? '穿过不断加速的星域，避开迎面而来的障碍。' : 'Cross an accelerating starfield and dodge incoming obstacles.',
-      controls: lang === 'zh' ? '← → / A D / 触屏' : '← → / A D / touch',
-      storageKey: 'crazyczy-starflight-best',
-      art: '· ✦  ▲  ✦ ·',
-    },
-  ];
+  const games = gameCatalogue(lang);
 
   return (
     <SiteShell lang={lang} active="games">

@@ -1,40 +1,77 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, Html, OrbitControls, RoundedBox, useTexture } from '@react-three/drei';
-import { Globe2 } from 'lucide-react';
-import type { StaticImageData } from 'next/image';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { ContactShadows, Environment, Lightformer, RoundedBox, useTexture } from '@react-three/drei';
+import { Tv, Armchair, Globe2, RotateCcw, Sun, Moon, Lamp, Images, X, HelpCircle, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, MoveUp, MoveDown, Sparkles } from 'lucide-react';
+import { Component, Suspense, createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import * as THREE from 'three';
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { RoomNavigation } from './room-navigation';
+import type { MoveInput, ViewMode } from './room-navigation';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from './ui/dialog';
 import type { Language } from '@/lib/content';
-import messiPhoto from '@/pic/梅西-pixel.png';
-import jayPhoto from '@/pic/Jay-pixel.png';
-import friendsPhoto from '@/pic/老友记五人-pixel.png';
-import tagorePhoto from '@/pic/tagore-stray-birds-pixel.png';
-import gardenBackdrop from '@/pic/jiangnan-garden-pixel.png';
+import { ROOM_ARTWORKS } from './room-artworks';
+import type { RoomArtwork } from './room-artworks';
+import { PixelMaterials, usePixelMaterials } from './room-materials';
+import { RoomShell, WoodenDoor, ReadingSofa, BrushDesk, DetailedCube, DetailedPyramid } from './room-furnishings';
+import { FootballField } from './room-football';
+import { GardenWindow } from './room-window';
+import { RoomTelevision, TV_VIEW, SOFA_VIEW } from './room-television';
+import type { GameId } from '@/lib/games';
 
 const WORDS = {
   en: {
     intro: ['Hey, I am Zachary Cheng', 'Welcome to crazyczy.com'],
-    click: 'Click anywhere to lift your eyes',
-    explore: 'Drag to look · right-drag to move · scroll or pinch to zoom',
-    enter: 'Press Enter to continue',
+    click: 'Step into my room',
+    explore: 'Drag to orbit · right-drag to pan · scroll / pinch to zoom',
+    flyHint: 'Drag to look · WASD to move · Q / E down / up · Shift to move faster',
+    enter: 'Enter the website', orbit: 'Orbit', fly: 'Roam', reset: 'Reset view',
+    day: 'Let the daylight in', night: 'Switch to evening', lamp: 'Lamp',
+    artwork: 'On the wall', close: 'Back to the room', help: 'Room controls',
+    inspect: 'Take a closer look', toy: 'A little surprise', loading: 'Opening the room…',
+    fallback: 'The room could not load. You can still enter the website.',
+    forward: 'Forward', back: 'Back', left: 'Left', right: 'Right', up: 'Rise', down: 'Lower',
   },
   zh: {
     intro: ['嗨，我是 Zachary Cheng', '欢迎来到 crazyczy.com'],
-    click: '点击任意位置，抬头看看',
-    explore: '拖动视角 · 右键拖动移动 · 滚轮或双指缩放',
-    enter: '按回车继续',
+    click: '进来坐坐，抬头看看',
+    explore: '拖动环绕 · 右键平移 · 滚轮 / 双指缩放',
+    flyHint: '拖动环顾 · WASD 移动 · Q / E 下降 / 上升 · Shift 加速',
+    enter: '进入网站', orbit: '环绕', fly: '漫游', reset: '回到初始视角',
+    day: '迎接白天', night: '切换夜晚', lamp: '台灯',
+    artwork: '墙上的收藏', close: '回到房间', help: '房间操作',
+    inspect: '靠近看看', toy: '一个小彩蛋', loading: '正在打开房间…',
+    fallback: '房间暂时没有加载成功，你仍然可以直接进入网站。',
+    forward: '前进', back: '后退', left: '向左', right: '向右', up: '上升', down: '下降',
   },
 };
 
-function useTypewriter(lines: string[]) {
+const ARTWORKS = ROOM_ARTWORKS;
+const InteractionContext = createContext({ enabled: false, reducedMotion: false, setTip: (_tip: string) => {} });
+
+function Hotspot({ label, onActivate, children }: { label: string; onActivate: () => void; children: ReactNode }) {
+  const { enabled, setTip } = useContext(InteractionContext);
+  return <group
+    onPointerOver={(event) => { if (!enabled) return; event.stopPropagation(); setTip(label); }}
+    onPointerOut={() => { setTip(''); }}
+    onClick={(event) => { if (!enabled) return; event.stopPropagation(); if (event.delta <= 5) { setTip(''); onActivate(); } }}
+  >{children}</group>;
+}
+
+class RoomBoundary extends Component<{ children: ReactNode; message: string; onFailure: () => void }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch() { this.props.onFailure(); }
+  render() { return this.state.failed ? <output className="room-loading">{this.props.message}</output> : this.props.children; }
+}
+
+function useTypewriter(lines: string[], reducedMotion: boolean) {
   const [out, setOut] = useState(['', '']);
   const [activeLine, setActiveLine] = useState(0);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    if (reducedMotion) return;
     let cancelled = false;
     let row = 0;
     let char = 0;
@@ -61,406 +98,120 @@ function useTypewriter(lines: string[]) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [lines]);
+  }, [lines, reducedMotion]);
 
-  return { out, activeLine, done };
+  return reducedMotion ? { out: lines, activeLine: 1, done: true } : { out, activeLine, done };
 }
 
-function FootballField() {
-  const ball = useRef<THREE.Group>(null);
-  const velocity = useRef(new THREE.Vector2(.013, .009));
 
-  useFrame((_, delta) => {
-    if (!ball.current) return;
-    ball.current.position.x += velocity.current.x * delta * 21;
-    ball.current.position.z += velocity.current.y * delta * 21;
-    if (Math.abs(ball.current.position.x) > 1.78) velocity.current.x *= -1;
-    if (Math.abs(ball.current.position.z) > .91) velocity.current.y *= -1;
-    ball.current.rotation.x += delta * 2.2;
-    ball.current.rotation.z += delta * 1.8;
-    if (Math.random() < .003) velocity.current.rotateAround(new THREE.Vector2(), (Math.random() - .5) * .55);
-  });
-
-  const stripes = [-1.8, -1.2, -.6, 0, .6, 1.2, 1.8];
-  return (
-    <group position={[.35, 1.31, .22]}>
-      <RoundedBox args={[4.98, .2, 2.58]} radius={.1} castShadow receiveShadow>
-        <meshStandardMaterial color="#193426" roughness={.72} />
-      </RoundedBox>
-      {stripes.map((x, index) => (
-        <mesh key={x} position={[x, .115, 0]} receiveShadow>
-          <boxGeometry args={[.58, .018, 2.34]} />
-          <meshStandardMaterial color={index % 2 ? '#2f7545' : '#3e8650'} roughness={.94} />
-        </mesh>
-      ))}
-      {[-1, 1].map((side) => (
-        <mesh key={`goal-apron-${side}`} position={[side * 2.29, .116, 0]} receiveShadow>
-          <boxGeometry args={[.44, .02, 1.18]} />
-          <meshStandardMaterial color={side > 0 ? '#347a48' : '#397f4b'} roughness={.94} />
-        </mesh>
-      ))}
-      {[
-        [0, -1.17, 4.15, .018],
-        [0, 1.17, 4.15, .018],
-        [-2.07, 0, .018, 2.35],
-        [2.07, 0, .018, 2.35],
-      ].map((line, index) => (
-        <mesh key={index} position={[line[0], .134, line[1]]}>
-          <boxGeometry args={[line[2], .014, line[3]]} />
-          <meshBasicMaterial color="#f7f1df" />
-        </mesh>
-      ))}
-      <mesh position={[0, .132, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[.32, .345, 48]} />
-        <meshBasicMaterial color="#f7f1df" />
-      </mesh>
-      <mesh position={[0, .133, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[.018, 2.34]} />
-        <meshBasicMaterial color="#f7f1df" />
-      </mesh>
-      <mesh position={[0, .136, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.025, 18]} /><meshBasicMaterial color="#f7f1df" /></mesh>
-      {[-1, 1].map((side) => (
-        <group key={side}>
-          <mesh position={[side * 1.35, .138, 0]}><boxGeometry args={[.018, .014, 1.38]} /><meshBasicMaterial color="#f7f1df" /></mesh>
-          {[-.68, .68].map((z) => <mesh key={`penalty-side-${z}`} position={[side * 1.71, .138, z]}><boxGeometry args={[.72, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>)}
-          <mesh position={[side * 1.73, .139, 0]}><boxGeometry args={[.018, .014, .74]} /><meshBasicMaterial color="#f7f1df" /></mesh>
-          {[-.36, .36].map((z) => <mesh key={`goal-area-${z}`} position={[side * 1.9, .139, z]}><boxGeometry args={[.34, .014, .018]} /><meshBasicMaterial color="#f7f1df" /></mesh>)}
-          <mesh position={[side * 1.49, .141, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.022, 16]} /><meshBasicMaterial color="#f7f1df" /></mesh>
-          <mesh position={[side * 1.49, .137, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[.29, .305, 40, 1, side > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI]} />
-            <meshBasicMaterial color="#f7f1df" />
-          </mesh>
-          <group position={[side * 2.08, .145, 0]}>
-            {[-.5, .5].map((z) => <mesh key={`post-${z}`} position={[0, .31, z]} castShadow><cylinderGeometry args={[.026, .026, .62, 16]} /><meshStandardMaterial color="#f5f2e8" roughness={.46} /></mesh>)}
-            <mesh position={[0, .62, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow><cylinderGeometry args={[.026, .026, 1.05, 16]} /><meshStandardMaterial color="#f5f2e8" roughness={.46} /></mesh>
-            {[-.5, .5].map((z) => <mesh key={`depth-${z}`} position={[side * .15, .62, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.018, .018, .3, 12]} /><meshStandardMaterial color="#e8e4d8" roughness={.6} /></mesh>)}
-            <mesh position={[side * .3, .34, 0]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.018, .018, 1.02, 12]} /><meshStandardMaterial color="#e8e4d8" roughness={.6} /></mesh>
-            {[-.44, -.22, 0, .22, .44].map((z) => <mesh key={`net-v-${z}`} position={[side * .29, .31, z]}><boxGeometry args={[.009, .55, .009]} /><meshBasicMaterial color="#eeeade" transparent opacity={.72} /></mesh>)}
-            {[.08, .2, .32, .44, .56].map((y) => <mesh key={`net-h-${y}`} position={[side * .29, y, 0]}><boxGeometry args={[.009, .009, 1]} /><meshBasicMaterial color="#eeeade" transparent opacity={.72} /></mesh>)}
-            {[-.5, .5].flatMap((z) => [.1, .26, .42, .58].map((y) => <mesh key={`side-${z}-${y}`} position={[side * .15, y, z]}><boxGeometry args={[.29, .009, .009]} /><meshBasicMaterial color="#eeeade" transparent opacity={.62} /></mesh>))}
-          </group>
-        </group>
-      ))}
-      <group ref={ball} position={[.15, .32, .1]}>
-        <mesh castShadow><sphereGeometry args={[.15, 48, 32]} /><meshPhysicalMaterial color="#f4f1e8" roughness={.42} clearcoat={.18} clearcoatRoughness={.55} /></mesh>
-        {[
-          [0, 1, 1.618], [0, -1, 1.618], [0, 1, -1.618], [0, -1, -1.618],
-          [1, 1.618, 0], [-1, 1.618, 0], [1, -1.618, 0], [-1, -1.618, 0],
-          [1.618, 0, 1], [-1.618, 0, 1], [1.618, 0, -1], [-1.618, 0, -1],
-        ].map((coordinates, index) => {
-          const direction = new THREE.Vector3(...coordinates as [number, number, number]).normalize();
-          const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
-          return (
-            <group key={index} position={direction.clone().multiplyScalar(.151)} quaternion={quaternion}>
-              <mesh><circleGeometry args={[.041, 5]} /><meshStandardMaterial color="#c9c6bd" roughness={.7} polygonOffset polygonOffsetFactor={-2} /></mesh>
-              <mesh position={[0, 0, .0015]}><circleGeometry args={[.032, 5]} /><meshStandardMaterial color="#171817" roughness={.58} polygonOffset polygonOffsetFactor={-3} /></mesh>
-            </group>
-          );
-        })}
-      </group>
-    </group>
-  );
-}
-
-function ScholarSet() {
-  return (
-    <group position={[-3.05, 1.3, .2]} rotation={[0, .12, 0]}>
-      {[0, 1, 2].map((page) => (
-        <mesh key={page} position={[.35 + page * .018, .018 + page * .009, page * -.02]} rotation={[0, -.08 + page * .015, 0]} castShadow>
-          <boxGeometry args={[1.48, .018, .92]} />
-          <meshStandardMaterial color={page === 2 ? '#eee3c7' : '#d7c7a4'} roughness={.96} />
-        </mesh>
-      ))}
-      {[-.24, -.1, .04].map((x) => <mesh key={x} position={[x + .42, .055, .12]}><boxGeometry args={[.022, .012, .56]} /><meshStandardMaterial color="#b9a886" /></mesh>)}
-
-      <group position={[-.58, .07, -.18]}>
-        <mesh castShadow><boxGeometry args={[.62, .13, .46]} /><meshStandardMaterial color="#242321" roughness={.55} /></mesh>
-        <mesh position={[0, .072, 0]}><boxGeometry args={[.43, .018, .28]} /><meshStandardMaterial color="#080909" roughness={.18} /></mesh>
-        <mesh position={[-.23, .12, -.16]}><boxGeometry args={[.13, .08, .1]} /><meshStandardMaterial color="#393530" roughness={.72} /></mesh>
-      </group>
-
-      <group position={[-.12, .1, .3]}>
-        {[-.18, 0, .18].map((x, index) => <mesh key={x} position={[x, 0, 0]} rotation={[0, 0, index % 2 ? 0 : .12]}><boxGeometry args={[.12, .17, .16]} /><meshStandardMaterial color={index === 1 ? '#7f684c' : '#9b7b55'} roughness={.8} /></mesh>)}
-      </group>
-      {[
-        { z: .22, color: '#9c512f', angle: -.18 },
-        { z: -.04, color: '#aa7a39', angle: .1 },
-      ].map((brush) => (
-        <group key={brush.z} position={[.05, .14, brush.z]} rotation={[0, brush.angle, 0]}>
-          <mesh position={[0, .035, -.12]} rotation={[Math.PI / 2, 0, 0]} castShadow><cylinderGeometry args={[.019, .019, .88, 16]} /><meshStandardMaterial color={brush.color} roughness={.42} /></mesh>
-          <mesh position={[0, .035, -.585]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.032, .027, .1, 16]} /><meshStandardMaterial color="#c7a45b" metalness={.62} roughness={.28} /></mesh>
-          <mesh position={[0, .035, -.74]} rotation={[Math.PI / 2, 0, 0]}><coneGeometry args={[.046, .23, 12]} /><meshStandardMaterial color="#211a16" roughness={.92} /></mesh>
-          <mesh position={[0, .035, .34]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.025, .019, .045, 12]} /><meshStandardMaterial color="#d3b66f" metalness={.48} roughness={.3} /></mesh>
-        </group>
-      ))}
-      <group position={[-.98, .12, .32]}>
-        <mesh><boxGeometry args={[.22, .22, .22]} /><meshStandardMaterial color="#76563b" roughness={.86} /></mesh>
-        <mesh position={[0, .13, 0]}><boxGeometry args={[.15, .05, .15]} /><meshStandardMaterial color="#987354" roughness={.8} /></mesh>
-      </group>
-    </group>
-  );
-}
-
-function VoxelPuzzle({ position, rotation = 0, size = .54 }: { position: [number, number, number]; rotation?: number; size?: number }) {
-  const cells = [-1, 0, 1];
-  const sticker = size / 3.7;
-  return (
-    <group position={position} rotation={[.06, rotation, -.04]}>
-      <mesh castShadow><boxGeometry args={[size, size, size]} /><meshStandardMaterial color="#171a18" roughness={.5} /></mesh>
-      {cells.flatMap((a) => cells.map((b) => (
-        <group key={`${a}-${b}`}>
-          <mesh position={[a * size / 3.25, size / 2 + .006, b * size / 3.25]}><boxGeometry args={[sticker, .012, sticker]} /><meshStandardMaterial color={['#f0cc43', '#e46737', '#f4efe0'][(a + b + 6) % 3]} roughness={.48} /></mesh>
-          <mesh position={[a * size / 3.25, b * size / 3.25, size / 2 + .006]}><boxGeometry args={[sticker, sticker, .012]} /><meshStandardMaterial color={['#2d7b55', '#d64a3f', '#396fa0'][(a - b + 6) % 3]} roughness={.48} /></mesh>
-          <mesh position={[size / 2 + .006, a * size / 3.25, b * size / 3.25]}><boxGeometry args={[.012, sticker, sticker]} /><meshStandardMaterial color={['#ede9dc', '#d94b3d', '#2d6ea0'][(a + b + 6) % 3]} roughness={.48} /></mesh>
-        </group>
-      )))}
-    </group>
-  );
-}
-
-function PyramidPuzzle({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position} rotation={[.08, -.28, -.05]}>
-      <mesh castShadow><tetrahedronGeometry args={[.4, 0]} /><meshStandardMaterial color="#171a18" roughness={.56} /></mesh>
-      {[
-        [0, .2, .22, '#e6c63e'],
-        [-.18, -.08, .1, '#d94d39'],
-        [.18, -.08, .1, '#327b58'],
-        [0, -.08, -.18, '#376ca0'],
-      ].map((piece, index) => <mesh key={index} position={[piece[0] as number, piece[1] as number, piece[2] as number]} scale={.46}><tetrahedronGeometry args={[.38, 0]} /><meshStandardMaterial color={piece[3] as string} roughness={.48} /></mesh>)}
-    </group>
-  );
-}
-
-function MirrorPuzzle({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position} rotation={[.06, .24, -.04]}>
-      <mesh castShadow><boxGeometry args={[.54, .54, .54]} /><meshStandardMaterial color="#b9bdba" metalness={.88} roughness={.2} /></mesh>
-      {[-.13, .07].map((x) => <mesh key={`front-v-${x}`} position={[x, 0, .276]}><boxGeometry args={[.018, .52, .012]} /><meshStandardMaterial color="#282c2a" metalness={.45} /></mesh>)}
-      {[-.1, .12].map((y) => <mesh key={`front-h-${y}`} position={[0, y, .276]}><boxGeometry args={[.52, .018, .012]} /><meshStandardMaterial color="#282c2a" metalness={.45} /></mesh>)}
-      {[-.13, .07].map((x) => <mesh key={`top-v-${x}`} position={[x, .276, 0]}><boxGeometry args={[.018, .012, .52]} /><meshStandardMaterial color="#303432" metalness={.45} /></mesh>)}
-      {[-.11, .1].map((z) => <mesh key={`top-h-${z}`} position={[0, .276, z]}><boxGeometry args={[.52, .012, .018]} /><meshStandardMaterial color="#303432" metalness={.45} /></mesh>)}
-      {[-.1, .12].map((y) => <mesh key={`side-h-${y}`} position={[.276, y, 0]}><boxGeometry args={[.012, .018, .52]} /><meshStandardMaterial color="#252927" metalness={.45} /></mesh>)}
-      {[-.12, .08].map((z) => <mesh key={`side-v-${z}`} position={[.276, 0, z]}><boxGeometry args={[.012, .52, .018]} /><meshStandardMaterial color="#252927" metalness={.45} /></mesh>)}
-    </group>
-  );
-}
-
-function CabinetAndLamp() {
+function CabinetAndLamp({ on, toggle, label }: { on: boolean; toggle: () => void; label: string }) {
+  const maps = usePixelMaterials();
   return (
     <group>
       <group position={[-4.25, .88, -5.86]}>
-        <mesh castShadow><boxGeometry args={[2.72, 1.62, .78]} /><meshStandardMaterial color="#5f3c29" roughness={.7} /></mesh>
-        <mesh position={[0, .06, .405]}><boxGeometry args={[2.5, 1.38, .035]} /><meshStandardMaterial color="#734a32" roughness={.62} /></mesh>
+        <mesh castShadow><boxGeometry args={[2.72, 1.62, .78]} /><meshStandardMaterial map={maps.walnut} color="#c9ac90" roughness={.7} /></mesh>
+        <mesh position={[0, .06, .405]}><boxGeometry args={[2.5, 1.38, .035]} /><meshStandardMaterial map={maps.oak} color="#c9a581" roughness={.75} /></mesh>
         <mesh position={[0, .06, .43]}><boxGeometry args={[.045, 1.34, .025]} /><meshStandardMaterial color="#35251d" /></mesh>
         <mesh position={[0, .56, .445]}><boxGeometry args={[2.44, .035, .025]} /><meshStandardMaterial color="#35251d" /></mesh>
         {[-.62, .62].map((x) => <mesh key={x} position={[x, .08, .458]}><boxGeometry args={[.1, .1, .045]} /><meshStandardMaterial color="#c69a4d" metalness={.66} roughness={.3} /></mesh>)}
 
-        <VoxelPuzzle position={[-.68, 1.14, .02]} rotation={-.32} size={.5} />
-        <PyramidPuzzle position={[0, 1.18, .02]} />
-        <MirrorPuzzle position={[.68, 1.14, .03]} />
-
-        {[-1.08, 1.08].map((x, index) => (
-          <group key={x} position={[x, 1.05, .02]}>
-            <mesh position={[0, .08, 0]}><boxGeometry args={[.38, .16, .34]} /><meshStandardMaterial color="#79542c" metalness={.45} roughness={.35} /></mesh>
-            <mesh position={[0, .28, 0]}><boxGeometry args={[.14, .25, .14]} /><meshStandardMaterial color="#d1a64d" metalness={.72} roughness={.24} /></mesh>
-            {[-.14, .14].map((side) => <mesh key={side} position={[side, .48, 0]}><boxGeometry args={[.16, .3, .16]} /><meshStandardMaterial color={index ? '#d4ad58' : '#ba8533'} metalness={.76} roughness={.22} /></mesh>)}
-            <mesh position={[0, .61, 0]}><boxGeometry args={[.42, .12, .2]} /><meshStandardMaterial color={index ? '#d4ad58' : '#ba8533'} metalness={.76} roughness={.22} /></mesh>
-          </group>
-        ))}
+        <DetailedCube position={[-.68, .9935, .02]} rotation={-.32} size={.35} />
+        <DetailedPyramid position={[0, .9402, .02]} scale={.7} />
+        <DetailedCube position={[.68, 1.0075, .03]} order={4} size={.378} rotation={.22} />
       </group>
-      <group position={[-2.24, 0, -5.78]}>
+      <group position={[-2.24, 0, -5.78]}><Hotspot label={label} onActivate={toggle}>
         <mesh position={[0, .05, 0]}><boxGeometry args={[.78, .1, .58]} /><meshStandardMaterial color="#292723" metalness={.25} roughness={.55} /></mesh>
         <mesh position={[0, 1.48, 0]}><boxGeometry args={[.075, 2.86, .075]} /><meshStandardMaterial color="#302c27" metalness={.42} roughness={.42} /></mesh>
-        {[0, 1, 2].map((step) => <mesh key={step} position={[0, 2.48 + step * .17, 0]}><boxGeometry args={[1.02 - step * .2, .2, .72 - step * .12]} /><meshStandardMaterial color="#e8bd6e" emissive="#bd682c" emissiveIntensity={.38} roughness={.76} /></mesh>)}
-        <pointLight position={[0, 2.45, .22]} intensity={28} distance={7} color="#ffb65f" />
-      </group>
+        {[0, 1, 2].map((step) => <mesh key={step} position={[0, 2.48 + step * .17, 0]}><boxGeometry args={[1.02 - step * .2, .2, .72 - step * .12]} /><meshStandardMaterial color="#e8bd6e" emissive="#bd682c" emissiveIntensity={on ? .5 : 0} roughness={.76} /></mesh>)}
+        <pointLight position={[0, 2.45, .22]} intensity={on ? 28 : 0} distance={7} color="#ffb65f" />
+      </Hotspot></group>
     </group>
   );
 }
 
-type PhotoFormat = 'square' | 'hero' | 'landscape';
-
-function WallPhoto({ position, rotation = 0, src, format = 'square' }: { position: [number, number, number]; rotation?: number; src: StaticImageData; format?: PhotoFormat }) {
-  const dimensions: Record<PhotoFormat, [number, number]> = {
-    square: [1.46, 1.46],
-    hero: [2.48, 1.5],
-    landscape: [2.12, 1.28],
-  };
-  const [width, height] = dimensions[format];
-  const sourceTexture = useTexture(src.src);
+function WallPhoto({ artwork, onInspect }: { artwork: RoomArtwork; onInspect: () => void }) {
+  const { width, height, image: src, position, rotation, title } = artwork;
+  const maps = usePixelMaterials();
+  const source = useTexture(src.src);
   const texture = useMemo(() => {
-    const nextTexture = sourceTexture.clone();
-    nextTexture.colorSpace = THREE.SRGBColorSpace;
-    nextTexture.magFilter = THREE.NearestFilter;
-    nextTexture.minFilter = THREE.LinearMipmapLinearFilter;
-    nextTexture.anisotropy = 8;
-    nextTexture.needsUpdate = true;
-    return nextTexture;
-  }, [sourceTexture]);
-  return (
-    <group position={position} rotation={[0, 0, rotation]}>
-      <mesh castShadow><boxGeometry args={[width + .24, height + .24, .14]} /><meshStandardMaterial color="#2b2018" roughness={.56} /></mesh>
-      <mesh position={[0, 0, .084]}><boxGeometry args={[width + .1, height + .1, .045]} /><meshStandardMaterial color="#d4c29e" roughness={.88} /></mesh>
-      {[
-        [-width / 2 - .07, height / 2 + .07],
-        [width / 2 + .07, height / 2 + .07],
-        [-width / 2 - .07, -height / 2 - .07],
-        [width / 2 + .07, -height / 2 - .07],
-      ].map((corner, index) => <mesh key={index} position={[corner[0], corner[1], .13]}><boxGeometry args={[.07, .07, .035]} /><meshStandardMaterial color="#a37b38" metalness={.64} roughness={.34} /></mesh>)}
-      <mesh position={[0, 0, .118]}><planeGeometry args={[width, height]} /><meshBasicMaterial map={texture} toneMapped={false} /></mesh>
-    </group>
-  );
-}
-
-function RainWindow() {
-  const gardenTextureSource = useTexture(gardenBackdrop.src);
-  const gardenTexture = useMemo(() => {
-    const texture = gardenTextureSource.clone();
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.magFilter = THREE.NearestFilter;
-    texture.minFilter = THREE.LinearMipmapLinearFilter;
-    texture.anisotropy = 8;
-    texture.needsUpdate = true;
-    return texture;
-  }, [gardenTextureSource]);
-
-  const drops = useMemo(() => Array.from({ length: 160 }, (_, index) => ({
-    x: ((index * 41) % 157) / 156 * 4.96 - 2.48,
-    y: ((index * 59) % 149) / 148 * 3.9 - 1.95,
-    speed: .72 + ((index * 31) % 53) / 34,
-    length: .045 + (index % 7) * .018,
-    opacity: .35 + (index % 5) * .1,
-  })), []);
-  const refs = useRef<(THREE.Mesh | null)[]>([]);
-
-  useFrame((_, delta) => refs.current.forEach((drop, index) => {
-    if (!drop) return;
-    const safeDelta = Math.min(delta, .04);
-    drop.position.y -= safeDelta * drops[index].speed;
-    drop.position.x -= safeDelta * .075;
-    if (drop.position.y < -1.96) {
-      drop.position.y = 1.96;
-      drop.position.x = drops[index].x;
-    }
-  }));
-
-  return (
-    <group position={[6.39, 3.16, .12]} rotation={[0, -Math.PI / 2, 0]}>
-      <mesh position={[0, 0, -.018]}>
-        <planeGeometry args={[5.22, 4.22]} />
-        <meshBasicMaterial map={gardenTexture} toneMapped={false} />
-      </mesh>
-      <mesh position={[0, 0, .008]}>
-        <planeGeometry args={[5.22, 4.22]} />
-        <meshPhysicalMaterial color="#d9efed" transparent opacity={.12} roughness={.12} transmission={.32} thickness={.018} />
-      </mesh>
-
-      {[-1.3, 0, 1.3].map((x) => <mesh key={x} position={[x, 0, .028]}><boxGeometry args={[.036, 4.24, .028]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
-      {[-2.6, 2.6].map((x) => <mesh key={x} position={[x, 0, .03]}><boxGeometry args={[.055, 4.3, .032]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
-      {[-2.1, 2.1].map((y) => <mesh key={y} position={[0, y, .03]}><boxGeometry args={[5.24, .055, .032]} /><meshStandardMaterial color="#302923" roughness={.62} /></mesh>)}
-
-      {drops.map((drop, index) => (
-        <mesh ref={(node) => { refs.current[index] = node; }} key={index} position={[drop.x, drop.y, .052]} rotation={[0, 0, -.075]}>
-          <planeGeometry args={[.011, drop.length]} />
-          <meshBasicMaterial color="#f2fbfb" transparent opacity={drop.opacity} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-type GeoPoint = [number, number];
-
-const CONTINENT_OUTLINES: GeoPoint[][] = [
-  [[-168, 71], [-151, 76], [-132, 73], [-118, 69], [-102, 73], [-82, 68], [-61, 61], [-54, 52], [-62, 46], [-71, 44], [-75, 39], [-81, 31], [-88, 19], [-96, 15], [-105, 20], [-113, 29], [-120, 35], [-125, 43], [-127, 51], [-139, 59], [-154, 61]],
-  [[-82, 12], [-74, 11], [-66, 9], [-58, 5], [-51, 1], [-45, -8], [-39, -15], [-35, -23], [-42, -33], [-49, -42], [-54, -51], [-63, -55], [-68, -48], [-72, -38], [-74, -25], [-77, -13], [-81, -2]],
-  [[-10, 36], [-9, 43], [-5, 44], [-4, 48], [-1, 50], [2, 51], [4, 53], [8, 54], [12, 55], [16, 54], [20, 55], [24, 58], [30, 59], [32, 54], [29, 49], [27, 45], [24, 41], [20, 39], [16, 38], [13, 43], [10, 44], [7, 43], [3, 43], [0, 42], [-4, 43], [-7, 41]],
-  [[-18, 35], [-8, 37], [2, 37], [11, 36], [20, 33], [28, 31], [34, 27], [39, 20], [44, 12], [51, 10], [48, 2], [43, -10], [40, -18], [34, -27], [27, -34], [18, -35], [10, -30], [4, -22], [-2, -10], [-7, 2], [-13, 10], [-17, 22]],
-  [[24, 39], [29, 43], [34, 48], [35, 54], [30, 58], [25, 61], [31, 66], [43, 69], [55, 73], [72, 76], [91, 78], [111, 75], [131, 70], [149, 65], [165, 59], [179, 52], [176, 47], [166, 45], [156, 43], [148, 40], [142, 42], [139, 46], [135, 48], [132, 45], [130, 42], [127, 41], [126, 38], [128, 35], [125, 34], [123, 31], [122, 28], [121, 24], [116, 23], [111, 21], [108, 18], [106, 12], [102, 8], [98, 11], [96, 18], [92, 22], [88, 23], [85, 20], [82, 13], [80, 8], [77, 8], [74, 18], [70, 23], [65, 25], [59, 25], [54, 29], [49, 30], [45, 34], [41, 37], [36, 37], [31, 34]],
-  [[112, -11], [128, -9], [139, -12], [154, -20], [151, -39], [132, -44], [119, -36], [113, -28]],
-  [[-54, 60], [-42, 60], [-20, 72], [-28, 82], [-48, 84], [-62, 74]],
-  [[130, 31], [133, 33], [135, 36], [138, 40], [140, 44], [143, 45], [146, 42], [144, 38], [142, 34], [138, 31], [135, 30]],
-  [[-10, 50], [-6, 50], [-4, 52], [-5, 55], [-3, 58], [-6, 59], [-9, 57]],
-  [[-10, 51], [-9, 55], [-7, 56], [-6, 53], [-7, 51]],
-  [[-25, 63], [-13, 63], [-14, 67], [-20, 67], [-24, 66]],
-  [[5, 58], [7, 62], [11, 66], [15, 70], [20, 71], [25, 69], [29, 65], [28, 61], [24, 58], [20, 56], [15, 57], [11, 59]],
-  [[7, 45], [10, 46], [12, 44], [13, 42], [16, 39], [17, 38], [15, 37], [13, 39], [11, 41], [10, 44]],
-  [[96, 5], [108, 6], [119, 1], [130, -5], [121, -9], [106, -7]],
-  [[34, 30], [42, 30], [49, 24], [56, 17], [51, 12], [44, 13], [39, 20]],
-  [[77, 30], [88, 27], [92, 21], [86, 8], [79, 7], [74, 19]],
-  [[119, 23], [122, 25], [122, 18], [120, 15]],
-  [[120, 14], [123, 14], [125, 11], [126, 8], [124, 5], [121, 7]],
-  [[125, 39], [129, 41], [130, 38], [129, 35], [126, 34]],
-  [[121, 25], [123, 25], [122, 22], [121, 21]],
-  [[141, 45], [145, 46], [146, 43], [144, 41], [142, 42]],
-  [[47, -13], [50, -16], [49, -25], [45, -24], [44, -17]],
-];
-
-function isInsideOutline(lon: number, lat: number, outline: GeoPoint[]) {
-  let inside = false;
-  for (let current = 0, previous = outline.length - 1; current < outline.length; previous = current++) {
-    const [currentLon, currentLat] = outline[current];
-    const [previousLon, previousLat] = outline[previous];
-    if ((currentLat > lat) !== (previousLat > lat) && lon < (previousLon - currentLon) * (lat - currentLat) / (previousLat - currentLat) + currentLon) inside = !inside;
-  }
-  return inside;
+    const map = source.clone();
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.magFilter = THREE.NearestFilter;
+    map.minFilter = THREE.LinearMipmapLinearFilter;
+    map.anisotropy = 8;
+    map.needsUpdate = true;
+    return map;
+  }, [source]);
+  useEffect(() => () => texture.dispose(), [texture]);
+  return <group position={position} rotation={[0, 0, rotation]}><Hotspot label={title} onActivate={onInspect}>
+    <mesh castShadow><boxGeometry args={[width + .24, height + .24, .14]} /><meshStandardMaterial map={maps.walnut} color="#79614b" roughness={.72} /></mesh>
+    <mesh position={[0, 0, .077]}><boxGeometry args={[width + .12, height + .12, .025]} /><meshStandardMaterial map={maps.paper} color="#efe1c0" roughness={1} /></mesh>
+    <mesh position={[0, 0, .096]}><planeGeometry args={[width, height]} /><meshBasicMaterial map={texture} toneMapped={false} /></mesh>
+    {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([x, y]) => <mesh key={`${x}-${y}`} position={[x * (width / 2 + .085), y * (height / 2 + .085), .083]}><boxGeometry args={[.044, .044, .018]} /><meshStandardMaterial color="#b3995d" metalness={.6} roughness={.4} /></mesh>)}
+  </Hotspot></group>;
 }
 
 function WorldMap() {
-  const mapWidth = 3.72;
-  const mapHeight = 2.15;
-  const segments = useMemo(() => {
-    const columns = 144;
-    const rows = 72;
-    const cellWidth = mapWidth / columns;
-    const cellHeight = mapHeight / rows;
-    const result: { x: number; y: number; width: number; color: string }[] = [];
-    for (let row = 0; row < rows; row += 1) {
-      const lat = 85 - (row + .5) / rows * 170;
-      let start = -1;
-      for (let column = 0; column <= columns; column += 1) {
-        const lon = -180 + (column + .5) / columns * 360;
-        const land = column < columns && CONTINENT_OUTLINES.some((outline) => isInsideOutline(lon, lat, outline));
-        if (land && start < 0) start = column;
-        if ((!land || column === columns) && start >= 0) {
-          const count = column - start;
-          const centerColumn = start + count / 2;
-          const seed = Math.abs(Math.round(lat * .13 + start * .71));
-          result.push({
-            x: -mapWidth / 2 + centerColumn * cellWidth,
-            y: mapHeight / 2 - (row + .5) * cellHeight,
-            width: count * cellWidth * .96,
-            color: ['#9b864c', '#72834a', '#b39b5d', '#766443'][seed % 4],
-          });
-          start = -1;
-        }
-      }
-    }
-    return result;
-  }, []);
-
-  return (
-    <group position={[-6.38, 3.78, -.15]} rotation={[0, Math.PI / 2, 0]}>
-      <mesh castShadow><boxGeometry args={[4.08, 2.51, .14]} /><meshStandardMaterial color="#4c3121" roughness={.66} /></mesh>
-      <mesh position={[0, 0, .085]}><planeGeometry args={[3.82, 2.25]} /><meshStandardMaterial color="#809b96" roughness={.94} /></mesh>
-      {[-1.43, -.72, 0, .72, 1.43].map((x) => <mesh key={x} position={[x, 0, .096]}><boxGeometry args={[.012, 2.14, .01]} /><meshBasicMaterial color="#d7e4dc" transparent opacity={.2} /></mesh>)}
-      {[-.78, -.39, 0, .39, .78].map((y) => <mesh key={y} position={[0, y, .096]}><boxGeometry args={[3.7, .012, .01]} /><meshBasicMaterial color="#d7e4dc" transparent opacity={.2} /></mesh>)}
-      {segments.map((segment, index) => (
-        <group key={index}>
-          <mesh position={[segment.x, segment.y, .109]}><boxGeometry args={[segment.width + .012, mapHeight / 72 * 1.08, .028]} /><meshStandardMaterial color="#394338" roughness={.9} /></mesh>
-          <mesh position={[segment.x, segment.y, .13]}><boxGeometry args={[segment.width, mapHeight / 72 * .78, .03]} /><meshStandardMaterial color={segment.color} roughness={.86} /></mesh>
-        </group>
-      ))}
-      {[
-        [-1.96, 1.18], [1.96, 1.18], [-1.96, -1.18], [1.96, -1.18],
-      ].map((corner, index) => <mesh key={index} position={[corner[0], corner[1], .12]}><boxGeometry args={[.09, .09, .035]} /><meshStandardMaterial color="#b68940" metalness={.5} roughness={.35} /></mesh>)}
-      <Html transform position={[1.23, .4, .15]} distanceFactor={5}><span className="map-pin" aria-label="My location">📍</span></Html>
+  const source = useTexture('/maps/world-land.png');
+  const texture = useMemo(() => {
+    const map = source.clone();
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.magFilter = THREE.NearestFilter;
+    map.minFilter = THREE.LinearMipmapLinearFilter;
+    map.anisotropy = 8;
+    map.needsUpdate = true;
+    return map;
+  }, [source]);
+  useEffect(() => () => texture.dispose(), [texture]);
+  // Same equirectangular projection as the map; an approximate eastern mainland point.
+  const pin: [number, number, number] = [117 / 360 * 3.72, 32 / 170 * 2.15, .15];
+  return <group position={[-6.38, 3.78, -.15]} rotation={[0, Math.PI / 2, 0]}>
+    <mesh castShadow><boxGeometry args={[4.08, 2.51, .14]} /><meshStandardMaterial color="#4c3121" roughness={.66} /></mesh>
+    <mesh position={[0, 0, .08]}><planeGeometry args={[3.9, 2.33]} /><meshStandardMaterial color="#d4c29e" /></mesh>
+    <mesh position={[0, 0, .09]}><planeGeometry args={[3.72, 2.15]} /><meshBasicMaterial map={texture} toneMapped={false} /></mesh>
+    {[[-1.96, 1.18], [1.96, 1.18], [-1.96, -1.18], [1.96, -1.18]].map((corner, index) => <mesh key={index} position={[corner[0], corner[1], .12]}><boxGeometry args={[.09, .09, .035]} /><meshStandardMaterial color="#b68940" metalness={.5} roughness={.35} /></mesh>)}
+    <group position={pin}>
+      <mesh><circleGeometry args={[.06, 20]} /><meshBasicMaterial color="#fff1c9" /></mesh>
+      <mesh position={[0, 0, .004]}><circleGeometry args={[.035, 20]} /><meshBasicMaterial color="#b54431" /></mesh>
+      <mesh position={[0, 0, .002]}><ringGeometry args={[.086, .095, 24]} /><meshBasicMaterial color="#fff1c9" transparent opacity={.6} /></mesh>
     </group>
-  );
+  </group>;
+}
+
+function SurpriseBlock({ trigger, onActivate, label }: { trigger: number; onActivate: () => void; label: string }) {
+  const box = useRef<THREE.Group>(null);
+  const star = useRef<THREE.Group>(null);
+  const time = useRef(2);
+  const { reducedMotion } = useContext(InteractionContext);
+  useEffect(() => { if (trigger > 0) time.current = 0; }, [trigger]);
+  useFrame((_, delta) => {
+    if (!box.current || !star.current) return;
+    time.current = Math.min(2, time.current + Math.min(delta, .05));
+    const phase = time.current;
+    box.current.position.y = reducedMotion ? 0 : Math.sin(Math.min(phase / .6, 1) * Math.PI) * .3;
+    box.current.rotation.y = reducedMotion ? .2 : .2 + Math.sin(Math.min(phase / .6, 1) * Math.PI) * .18;
+    star.current.visible = trigger > 0 && phase < 1.6;
+    star.current.position.y = reducedMotion ? .85 : .65 + Math.sin(Math.min(phase / 1.6, 1) * Math.PI) * .55;
+    star.current.rotation.y = reducedMotion ? 0 : phase * 4;
+  });
+  return <group position={[3.27, 1.67, 1.36]}>
+    <group ref={box} rotation={[0, .2, 0]}><Hotspot label={label} onActivate={onActivate}>
+      <mesh castShadow><boxGeometry args={[.58, .58, .58]} /><meshStandardMaterial color="#d99536" roughness={.62} emissive="#d07d22" emissiveIntensity={.12} /></mesh>
+      {[-1, 1].map((side) => <group key={side} position={[0, 0, side * .3]}>
+        <mesh><planeGeometry args={[.46, .46]} /><meshStandardMaterial color="#f2cc68" side={THREE.DoubleSide} /></mesh>
+        {[[0, .11], [.08, .11], [.08, .03], [0, -.04], [0, -.17]].map(([x, y], i) => <mesh key={i} position={[x, y, side * .003]}><boxGeometry args={[.063, .063, .014]} /><meshStandardMaterial color="#80532c" /></mesh>)}
+      </group>)}
+    </Hotspot></group>
+    <group ref={star} visible={false}>
+      <mesh><boxGeometry args={[.12, .43, .12]} /><meshBasicMaterial color="#ffe7a3" /></mesh>
+      <mesh><boxGeometry args={[.38, .12, .12]} /><meshBasicMaterial color="#ffe7a3" /></mesh>
+      <mesh><boxGeometry args={[.24, .27, .12]} /><meshBasicMaterial color="#ffe7a3" /></mesh>
+    </group>
+  </group>;
 }
 
 function GuitarAndRecords() {
+  const maps = usePixelMaterials();
   return (
     <group position={[4.45, .08, -5.82]} scale={1.16}>
       <group rotation={[0, -.08, -.1]}>
@@ -473,7 +224,7 @@ function GuitarAndRecords() {
         ].map((part, index) => (
           <mesh key={index} position={[part[0], part[1], 0]} castShadow>
             <boxGeometry args={[part[2], part[3], .22]} />
-            <meshStandardMaterial color={index % 2 ? '#a95d31' : '#bc7040'} roughness={.62} />
+            <meshStandardMaterial map={maps.oak} color={index % 2 ? '#c6a37e' : '#d1ad82'} roughness={.7} />
           </mesh>
         ))}
         <mesh position={[0, .73, .125]}><boxGeometry args={[.23, .23, .025]} /><meshStandardMaterial color="#241914" roughness={.82} /></mesh>
@@ -497,53 +248,6 @@ function GuitarAndRecords() {
   );
 }
 
-function RoomSurfaces() {
-  const tiles = useMemo(() => Array.from({ length: 121 }, (_, index) => ({
-    x: -5.8 + (index % 11) * 1.16,
-    z: -5.3 + Math.floor(index / 11) * 1.16,
-    color: ['#7d6a59', '#887361', '#756354', '#927966'][(index + Math.floor(index / 11)) % 4],
-  })), []);
-  return (
-    <>
-      <mesh position={[0, -.09, .55]} receiveShadow><boxGeometry args={[13.2, .16, 13.4]} /><meshStandardMaterial color="#4d443c" roughness={.94} /></mesh>
-      {tiles.map((tile, index) => (
-        <mesh key={index} position={[tile.x, .01, tile.z]} receiveShadow>
-          <boxGeometry args={[1.1, .035, 1.1]} />
-          <meshStandardMaterial color={tile.color} roughness={.91} />
-        </mesh>
-      ))}
-
-      <group position={[0, .055, 2.05]}>
-        <mesh receiveShadow><boxGeometry args={[7.35, .045, 5.25]} /><meshStandardMaterial color="#704033" roughness={.9} /></mesh>
-        {[[-3.33, 0, .22, 4.82], [3.33, 0, .22, 4.82], [0, -2.28, 6.88, .2], [0, 2.28, 6.88, .2]].map((part, index) => <mesh key={index} position={[part[0], .035, part[1]]}><boxGeometry args={[part[2], .035, part[3]]} /><meshStandardMaterial color="#d09b56" roughness={.82} /></mesh>)}
-        {[
-          [-2.85, -1.82], [2.85, -1.82], [-2.85, 1.82], [2.85, 1.82],
-        ].map((position, index) => <group key={index} position={[position[0], .065, position[1]]}>{[0, 1, 2].map((step) => <mesh key={step} position={[(index % 2 ? -1 : 1) * step * .18, 0, (index > 1 ? -1 : 1) * step * .18]}><boxGeometry args={[.23, .035, .23]} /><meshStandardMaterial color={step % 2 ? '#264f49' : '#d6b367'} /></mesh>)}</group>)}
-        <mesh position={[0, .04, 0]}><boxGeometry args={[3.2, .035, .18]} /><meshStandardMaterial color="#31534d" /></mesh>
-        <mesh position={[0, .04, 0]} rotation={[0, Math.PI / 2, 0]}><boxGeometry args={[2.3, .035, .18]} /><meshStandardMaterial color="#31534d" /></mesh>
-      </group>
-
-      <mesh position={[0, 3.2, -6.5]} receiveShadow><boxGeometry args={[13, 6.5, .14]} /><meshStandardMaterial color="#c6b797" roughness={.96} /></mesh>
-      {Array.from({ length: 16 }, (_, index) => <mesh key={index} position={[-6.15 + index * .82, 3.2, -6.418]}><boxGeometry args={[.075, 6.08, .018]} /><meshStandardMaterial color={index % 2 ? '#ae9d7d' : '#d7c9aa'} roughness={1} /></mesh>)}
-      {Array.from({ length: 14 }, (_, index) => <group key={index} position={[-5.9 + index * .9, 2.26 + (index % 2) * .7, -6.4]}><mesh><boxGeometry args={[.12, .12, .025]} /><meshStandardMaterial color="#879072" /></mesh><mesh position={[.12, .12, 0]}><boxGeometry args={[.12, .12, .025]} /><meshStandardMaterial color="#b08a59" /></mesh></group>)}
-
-      <mesh position={[-6.5, 3.2, .1]}><boxGeometry args={[.14, 6.5, 13.2]} /><meshStandardMaterial color="#beaf93" roughness={.96} /></mesh>
-      <mesh position={[6.5, 3.2, .1]}><boxGeometry args={[.14, 6.5, 13.2]} /><meshStandardMaterial color="#b9aa8f" roughness={.96} /></mesh>
-      {Array.from({ length: 16 }, (_, index) => <mesh key={`left-${index}`} position={[-6.418, 3.2, -5.95 + index * .8]}><boxGeometry args={[.018, 6.08, .065]} /><meshStandardMaterial color="#a8987c" roughness={1} /></mesh>)}
-      {Array.from({ length: 16 }, (_, index) => <mesh key={`right-${index}`} position={[6.418, 3.2, -5.95 + index * .8]}><boxGeometry args={[.018, 6.08, .065]} /><meshStandardMaterial color="#a29379" roughness={1} /></mesh>)}
-
-      <mesh position={[0, 3.2, 6.7]} receiveShadow><boxGeometry args={[13, 6.5, .14]} /><meshStandardMaterial color="#c2b293" roughness={.96} /></mesh>
-      {Array.from({ length: 16 }, (_, index) => <mesh key={`front-${index}`} position={[-6.15 + index * .82, 3.2, 6.618]}><boxGeometry args={[.075, 6.08, .018]} /><meshStandardMaterial color={index % 2 ? '#ab9a7b' : '#d2c3a3'} roughness={1} /></mesh>)}
-
-      <mesh position={[0, 6.48, .1]} receiveShadow><boxGeometry args={[13.2, .18, 13.2]} /><meshStandardMaterial color="#d4c6a9" roughness={.95} /></mesh>
-      <mesh position={[0, .22, -6.36]}><boxGeometry args={[13, .25, .16]} /><meshStandardMaterial color="#4d3828" roughness={.68} /></mesh>
-      <mesh position={[0, .22, 6.56]}><boxGeometry args={[13, .25, .16]} /><meshStandardMaterial color="#4d3828" roughness={.68} /></mesh>
-      <mesh position={[-6.36, .22, .1]}><boxGeometry args={[.16, .25, 13.2]} /><meshStandardMaterial color="#4d3828" roughness={.68} /></mesh>
-      <mesh position={[6.36, .22, .1]}><boxGeometry args={[.16, .25, 13.2]} /><meshStandardMaterial color="#4d3828" roughness={.68} /></mesh>
-    </>
-  );
-}
-
 function CeilingPendant() {
   return (
     <group position={[.3, 6.36, .55]}>
@@ -556,178 +260,216 @@ function CeilingPendant() {
   );
 }
 
-function VoxelBeanbag() {
-  return (
-    <group position={[.35, .03, 5.62]} rotation={[0, Math.PI, 0]}>
-      <mesh position={[0, .46, -.03]} scale={[1.72, .62, 1.12]} castShadow receiveShadow>
-        <sphereGeometry args={[1, 28, 18]} />
-        <meshStandardMaterial color="#a94725" roughness={.9} />
-      </mesh>
-      <mesh position={[0, .67, .18]} scale={[1.26, .38, .8]} castShadow>
-        <sphereGeometry args={[1, 28, 18]} />
-        <meshStandardMaterial color="#d9793c" roughness={.88} />
-      </mesh>
-      {[-.74, 0, .74].map((x, index) => (
-        <mesh key={`nest-back-${x}`} position={[x, 1.08 + (index === 1 ? .14 : 0), -.52]} scale={[.72, .82, .52]} castShadow>
-          <sphereGeometry args={[1, 24, 16]} />
-          <meshStandardMaterial color={index === 1 ? '#c55d2d' : '#b9532a'} roughness={.9} />
-        </mesh>
-      ))}
-      {[-1, 1].map((side) => (
-        <mesh key={`nest-arm-${side}`} position={[side * 1.28, .72, -.02]} rotation={[0, 0, side * -.16]} scale={[.48, .7, .9]} castShadow>
-          <sphereGeometry args={[1, 24, 16]} />
-          <meshStandardMaterial color="#bd572b" roughness={.9} />
-        </mesh>
-      ))}
-      <mesh position={[0, .84, -.32]} scale={[1.05, .34, .26]} castShadow>
-        <sphereGeometry args={[1, 24, 14]} />
-        <meshStandardMaterial color="#e08a48" roughness={.86} />
-      </mesh>
-      <mesh position={[0, .68, .17]} rotation={[Math.PI / 2, 0, 0]} scale={[1.3, .86, 1]}>
-        <torusGeometry args={[.86, .055, 8, 36]} />
-        <meshStandardMaterial color="#8f371f" roughness={.82} />
-      </mesh>
-      {[-.62, 0, .62].map((x) => <mesh key={`tuft-${x}`} position={[x, .99, -.48]}><sphereGeometry args={[.055, 12, 8]} /><meshStandardMaterial color="#7f2f1d" roughness={.75} /></mesh>)}
-    </group>
-  );
-}
-
-function CameraRig({ lifted }: { lifted: boolean }) {
-  const { camera } = useThree();
-  const controls = useRef<OrbitControlsImpl>(null);
-  const elapsed = useRef(0);
-  const wasLifted = useRef(false);
-  const transitionStartPosition = useRef(new THREE.Vector3());
-  const transitionStartTarget = useRef(new THREE.Vector3());
-  const overheadPosition = useMemo(() => new THREE.Vector3(.35, 6.2, 4.45), []);
-  const overheadTarget = useMemo(() => new THREE.Vector3(.35, 1.22, .18), []);
-  const roomPosition = useMemo(() => new THREE.Vector3(0, 2.7, 4.35), []);
-  const roomTarget = useMemo(() => new THREE.Vector3(.2, 2, -.55), []);
-
-  useFrame((_, delta) => {
-    if (!controls.current) return;
-    if (lifted && !wasLifted.current) {
-      elapsed.current = 0;
-      transitionStartPosition.current.copy(camera.position);
-      transitionStartTarget.current.copy(controls.current.target);
-    }
-    wasLifted.current = lifted;
-
-    if (!lifted) {
-      controls.current.enabled = false;
-      camera.position.lerp(overheadPosition, 1 - Math.pow(.004, Math.min(delta, .04)));
-      controls.current.target.lerp(overheadTarget, .12);
-    } else if (elapsed.current < 1.18) {
-      elapsed.current += Math.min(delta, .04);
-      controls.current.enabled = false;
-      const ease = 1 - Math.pow(1 - Math.min(elapsed.current / 1.18, 1), 3);
-      camera.position.lerpVectors(transitionStartPosition.current, roomPosition, ease);
-      controls.current.target.lerpVectors(transitionStartTarget.current, roomTarget, ease);
-      if (elapsed.current >= 1.18) {
-        camera.position.copy(roomPosition);
-        controls.current.target.copy(roomTarget);
-      }
-    } else {
-      controls.current.enabled = true;
-    }
-    controls.current.update();
-  });
-
-  return (
-    <OrbitControls
-      ref={controls}
-      makeDefault
-      enabled={false}
-      enableRotate
-      enableZoom
-      enablePan
-      enableDamping
-      dampingFactor={.065}
-      rotateSpeed={.68}
-      zoomSpeed={1.3}
-      panSpeed={.9}
-      zoomToCursor
-      screenSpacePanning
-      minDistance={.2}
-      maxDistance={5.35}
-      minPolarAngle={.72}
-      maxPolarAngle={1.84}
-      touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
-    />
-  );
-}
-
-function Room({ lifted }: { lifted: boolean }) {
+type RoomProps = {
+  night: boolean; lampOn: boolean; toy: number; lang: Language;
+  tv: boolean; tvReady: boolean; game: GameId | null; onTV: () => void; onCloseTV: () => void; onGame: (game: GameId | null) => void; onSeat: () => void;
+  onLamp: () => void; onNight: () => void; onToy: () => void; onArtwork: (id: string) => void;
+};
+function Room({ night, lampOn, toy, lang, onLamp, onNight, onToy, onArtwork, tv, tvReady, game, onTV, onCloseTV, onGame, onSeat }: RoomProps) {
+  const t = WORDS[lang];
+  const maps = usePixelMaterials();
+  const { reducedMotion } = useContext(InteractionContext);
   return (
     <>
-      <CameraRig lifted={lifted} />
-      <color attach="background" args={['#a99d8b']} />
-      <fog attach="fog" args={['#aaa08f', 10, 22]} />
-      <ambientLight intensity={1.15} color="#f7ead6" />
-      <directionalLight position={[-3, 8, 5]} intensity={2.4} color="#fff0d2" castShadow shadow-mapSize={[2048, 2048]} />
-      <pointLight position={[6.15, 4.2, .2]} intensity={13} distance={9} color="#c5e9e6" />
-      <RoomSurfaces />
+      <color attach="background" args={[night ? '#172932' : '#a99d8b']} />
+
+      <ambientLight intensity={night ? .26 : .65} color={night ? "#9baecb" : "#f7ead6"} />
+      <directionalLight position={[5, 7, 1]} intensity={night ? .3 : 2.2} color={night ? "#a8c2e8" : "#fff0d2"} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-.0003} shadow-normalBias={.025} />
+      <pointLight position={[6.15, 4.2, .2]} intensity={night ? 5 : 13} distance={9} color={night ? "#819ee0" : "#c5e9e6"} />
+      <RoomShell />
+      <WoodenDoor />
+      <Environment resolution={128}>
+        <Lightformer intensity={1.4} color="#dce7e0" position={[6, 3, 0]} rotation={[0, -Math.PI / 2, 0]} scale={[7, 6, 1]} />
+        <Lightformer intensity={.6} color="#eecb91" position={[-3, 4, 3]} scale={[4, 4, 1]} />
+      </Environment>
       <CeilingPendant />
-      <RoundedBox args={[8.05, .42, 3.62]} radius={.1} position={[0, 1.03, .58]} castShadow receiveShadow><meshStandardMaterial color="#724d37" roughness={.56} /></RoundedBox>
-      <mesh position={[0, 1.25, .58]}><boxGeometry args={[7.7,.035,3.28]} /><meshStandardMaterial color="#895f43" roughness={.42} /></mesh>
+      <RoundedBox args={[8.05, .42, 3.62]} radius={.1} position={[0, 1.03, .58]} castShadow receiveShadow><meshStandardMaterial map={maps.walnut} roughness={.7} /></RoundedBox>
+      <mesh position={[0, 1.25, .58]}><boxGeometry args={[7.7,.035,3.28]} /><meshStandardMaterial map={maps.oak} color="#d3b084" roughness={.7} /></mesh>
       {[[-3.4,-.85],[3.4,-.85],[-3.4,1.22],[3.4,1.22]].map((p,index) => <mesh key={index} position={[p[0],.5,p[1]+.58]} castShadow><boxGeometry args={[.24,1.02,.24]} /><meshStandardMaterial color="#493226" /></mesh>)}
-      <FootballField />
-      <ScholarSet />
-      <CabinetAndLamp />
-      <RainWindow />
+      <FootballField reducedMotion={reducedMotion} />
+      <BrushDesk />
+      <CabinetAndLamp on={lampOn} toggle={onLamp} label={t.lamp} />
+      <Hotspot onActivate={onNight} label={night ? t.day : t.night}><GardenWindow night={night} reducedMotion={reducedMotion} /></Hotspot>
       <WorldMap />
       <GuitarAndRecords />
-      <VoxelBeanbag />
-      <WallPhoto position={[-3.55, 4.15, -6.37]} rotation={-.045} format="hero" src={messiPhoto} />
-      <WallPhoto position={[-1.22, 4.45, -6.365]} rotation={.055} src={jayPhoto} />
-      <WallPhoto position={[.78, 3.68, -6.36]} rotation={-.035} format="landscape" src={friendsPhoto} />
-      <WallPhoto position={[3.4, 4.32, -6.365]} rotation={.06} format="hero" src={tagorePhoto} />
+      <Hotspot label={lang === 'zh' ? '坐在沙发上' : 'Sit on the sofa'} onActivate={onSeat}><ReadingSofa /></Hotspot>
+      <Hotspot label={lang === 'zh' ? '打开电视，玩一会儿' : 'Turn on the TV'} onActivate={onTV}><RoomTelevision active={tv} ready={tvReady} game={game} lang={lang} reducedMotion={reducedMotion} onGame={onGame} onClose={onCloseTV} /></Hotspot>
+      <SurpriseBlock trigger={toy} onActivate={onToy} label={t.toy} />
+      {ARTWORKS.map((artwork) => <WallPhoto key={artwork.id} artwork={artwork} onInspect={() => onArtwork(artwork.id)} />)}
       <ContactShadows position={[0, .02, 0]} opacity={.42} scale={15} blur={2.1} far={9} />
     </>
   );
 }
 
+function SceneUnavailable({ message, onFailure }: { message: string; onFailure: () => void }) {
+  useEffect(() => { onFailure(); }, [onFailure]);
+  return <output className="room-loading">{message}</output>;
+}
+
+function SceneReady({ onReady }: { onReady: () => void }) {
+  useEffect(() => { onReady(); }, [onReady]);
+  return null;
+}
+
 export function HomeExperience({ lang }: { lang: Language }) {
   const [lifted, setLifted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [mounted, setMounted] = useState(true);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [mode, setMode] = useState<ViewMode>('orbit');
+  const [resetId, setResetId] = useState(0);
+  const [night, setNight] = useState(false);
+  const [lampOn, setLampOn] = useState(true);
+  const [toy, setToy] = useState(0);
+  const [tip, setTip] = useState('');
+  const [artId, setArtId] = useState<string | null>(null);
+  const [tv, setTV] = useState(false);
+  const [tvReady, setTVReady] = useState(false);
+  const [game, setGame] = useState<GameId | null>(null);
+  const [seated, setSeated] = useState(false);
+  const modeBeforeTV = useRef<ViewMode>('orbit');
+  const modeBeforeSeat = useRef<ViewMode>('orbit');
+  const [help, setHelp] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const movement = useRef<MoveInput>({ x: 0, y: 0, z: 0 });
+  const clearMovement = useCallback(() => { movement.current = { x: 0, y: 0, z: 0 }; }, []);
+  const markReady = useCallback(() => setReady(true), []);
+  const markFailed = useCallback(() => setFailed(true), []);
+  const modeBeforeFocus = useRef<ViewMode>('orbit');
+  const openArtwork = useCallback((id: string) => {
+    if (!artId) modeBeforeFocus.current = mode;
+    setMode('orbit');
+    setArtId(id);
+    setTip('');
+  }, [artId, mode]);
+  const closeArtwork = useCallback(() => { setArtId(null); setMode(modeBeforeFocus.current); setTip(''); }, []);
+  const openTV = useCallback(() => { if(tv) return; modeBeforeTV.current = mode; setMode('orbit'); setTVReady(false); setTV(true); setTip(''); clearMovement(); }, [tv, mode, clearMovement]);
+  const closeTV = useCallback(() => { setGame(null); setTV(false); setTVReady(false); setMode(modeBeforeTV.current); setTip(''); clearMovement(); }, [clearMovement]);
+  const toggleSeat = useCallback(() => { if(artId) setArtId(null); if(seated) { setSeated(false); setMode(modeBeforeSeat.current); } else { modeBeforeSeat.current=artId ? modeBeforeFocus.current : mode; setMode('orbit'); setSeated(true); } setTip(''); clearMovement(); }, [seated, mode, artId, clearMovement]);
+  const onSettled = useCallback((id: string | null) => { setTVReady(id === 'television'); }, []);
+  const returnFocus = useRef<HTMLButtonElement>(null);
   const t = WORDS[lang];
-  const typing = useTypewriter(t.intro);
+  const typing = useTypewriter(t.intro, reducedMotion);
+  const artwork = ARTWORKS.find((art) => art.id === artId);
+  const views = useMemo(() => [...(seated ? [SOFA_VIEW] : []), ...(artwork ? [artwork] : []), ...(tv ? [TV_VIEW] : [])], [seated, artwork, tv]);
+  const modalOpen = help;
+  const interactive = lifted && ready && !modalOpen && !dismissed && !tv;
 
   useEffect(() => {
+    const query = matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (dismissed) return;
+    const site = document.querySelector('main');
+    const wasInert = site?.inert ?? false;
+    if (site) site.inert = true;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; if(site) site.inert = wasInert; };
+  }, [dismissed]);
+  useEffect(() => {
+    if (!dismissed) return;
+    const timer = setTimeout(() => setMounted(false), reducedMotion ? 0 : 1200);
+    return () => clearTimeout(timer);
+  }, [dismissed, reducedMotion]);
+  useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === 'Enter' && typing.done) setDismissed(true);
+      if (dismissed || modalOpen || event.repeat) return;
+      if (tv) { if (event.key === 'Escape') { event.preventDefault(); if(game) setGame(null); else closeTV(); } return; }
+      if (event.key === 'Escape' && seated && !artwork) { event.preventDefault(); toggleSeat(); return; }
+      const target = event.target as HTMLElement | null;
+      if (event.key === 'Escape' && artwork) { event.preventDefault(); closeArtwork(); return; }
+      if (event.key === 'Escape' && mode === 'fly') { setMode('orbit'); return; }
+      if (target?.closest('button, a, input, textarea, select, [role="dialog"]')) return;
+      if (event.key === 'Enter') { event.preventDefault(); setDismissed(true); }
     };
     addEventListener('keydown', handler);
     return () => removeEventListener('keydown', handler);
-  }, [typing.done]);
+  }, [dismissed, modalOpen, mode, artwork, closeArtwork, tv, game, closeTV, seated, toggleSeat]);
 
-  return (
-    <section className={['home-experience', lifted ? 'lifted' : '', dismissed ? 'entered' : ''].filter(Boolean).join(' ')} aria-label="Interactive personal room">
-      <div className="room-canvas">
-        <Canvas shadows camera={{ position: [.35, 6.2, 4.45], fov: 49 }} dpr={[1, 1.45]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
-          <Suspense fallback={null}><Room lifted={lifted} /></Suspense>
+
+  const moveButtons = [
+    { key: 'forward', title: t.forward, icon: ArrowUp, axis: 'z', value: 1 },
+    { key: 'left', title: t.left, icon: ArrowLeft, axis: 'x', value: -1 },
+    { key: 'back', title: t.back, icon: ArrowDown, axis: 'z', value: -1 },
+    { key: 'right', title: t.right, icon: ArrowRight, axis: 'x', value: 1 },
+    { key: 'up', title: t.up, icon: MoveUp, axis: 'y', value: 1 },
+    { key: 'down', title: t.down, icon: MoveDown, axis: 'y', value: -1 },
+  ] as const;
+
+  return <section className={['home-experience', lifted ? 'lifted' : '', dismissed ? 'entered' : '', night ? 'is-night' : '', artwork ? 'is-inspecting' : '', tv ? 'is-watching-tv' : '', seated ? 'is-seated' : '', tip ? 'has-hotspot' : ''].filter(Boolean).join(' ')} aria-label={lang === 'zh' ? '我的互动房间' : 'My interactive room'}>
+    <div className="room-canvas">
+      {mounted && <RoomBoundary message={t.fallback} onFailure={markFailed}>
+        <Canvas shadows camera={{ position: [.35, 5.95, 4.45], fov: 49, near: .05, far: 150 }} dpr={[1, 1.75]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }} fallback={<SceneUnavailable message={t.fallback} onFailure={markFailed} />}>
+          <InteractionContext.Provider value={{ enabled: interactive, reducedMotion, setTip }}>
+            <RoomNavigation lifted={lifted && ready} mode={mode} resetId={resetId} paused={modalOpen || dismissed} reducedMotion={reducedMotion} movement={movement} clearMovement={clearMovement} views={views} inputLocked={tv || seated} onSettled={onSettled} />
+            <Suspense fallback={null}>
+              <PixelMaterials><Room tv={tv} tvReady={tvReady} game={game} onTV={openTV} onCloseTV={closeTV} onGame={setGame} onSeat={toggleSeat} night={night} lampOn={lampOn} toy={toy} lang={lang} onLamp={() => setLampOn((on) => !on)} onNight={() => setNight((value) => !value)} onToy={() => setToy((value) => value + 1)} onArtwork={openArtwork} /></PixelMaterials>
+              <SceneReady onReady={markReady} />
+            </Suspense>
+          </InteractionContext.Provider>
         </Canvas>
+      </RoomBoundary>}
+    </div>
+    {!ready && !failed && <output className="room-loading">{t.loading}</output>}
+    {!lifted && <button className="room-look-control" aria-label={t.click} onClick={() => setLifted(true)} />}
+    <div className="room-pixel-overlay" aria-hidden="true" />
+    <div className="room-vignette" aria-hidden="true" />
+    <div className={`intro-type ${typing.done ? 'is-done' : ''}`}>
+      <h1><span>{typing.out[0]}{!typing.done && typing.activeLine === 0 && <i />}</span><span>{typing.out[1]}{!typing.done && typing.activeLine === 1 && <i />}</span></h1>
+    </div>
+    <a className="room-language" href={`/${lang === 'en' ? 'zh' : 'en'}/`}><Globe2 />{lang === 'en' ? '中文' : 'EN'}</a>
+    {lifted && ready && !tv && <>
+      <div className="room-toolbar" role="toolbar" aria-label={t.help}>
+        <div className="room-view-toggle">
+          <button disabled={seated} aria-pressed={mode === 'orbit'} onClick={() => { setMode('orbit'); setTip(''); }}>{t.orbit}</button>
+          <button disabled={seated} aria-pressed={mode === 'fly'} onClick={() => { setMode('fly'); setTip(''); }}>{t.fly}</button>
+        </div>
+        <button ref={returnFocus} title={t.reset} aria-label={t.reset} onClick={() => { setArtId(null); setSeated(false); setMode('orbit'); setResetId((value) => value + 1); setTip(''); }}><RotateCcw /></button>
+        <span className="room-toolbar-divider" />
+        <button title={night ? t.day : t.night} aria-label={night ? t.day : t.night} aria-pressed={night} onClick={() => setNight((value) => !value)}>{night ? <Moon /> : <Sun />}</button>
+        <button title={t.lamp} aria-label={t.lamp} aria-pressed={lampOn} onClick={() => setLampOn((value) => !value)}><Lamp /></button>
+        <button title={t.artwork} aria-label={t.artwork} onClick={() => { openArtwork('tagore'); setTip(''); }}><Images /></button>
+        <button title={lang === 'zh' ? '打开电视' : 'Watch TV'} aria-label={lang === 'zh' ? '打开电视' : 'Watch TV'} onClick={openTV}><Tv /></button>
+        <button title={lang === 'zh' ? '沙发坐姿' : 'Sofa view'} aria-label={lang === 'zh' ? '沙发坐姿' : 'Sofa view'} aria-pressed={seated} onClick={toggleSeat}><Armchair /></button>
+        <button title={t.help} aria-label={t.help} onClick={() => { setHelp(true); setTip(''); }}><HelpCircle /></button>
       </div>
-      <button
-        className="room-look-control"
-        aria-label={t.click}
-        onClick={() => setLifted(true)}
-      />
-      <div className="room-pixel-overlay" aria-hidden="true" />
-      <div className="room-vignette" aria-hidden="true" />
-      <div className="intro-type">
-        <h1>
-          <span>{typing.out[0]}{typing.activeLine === 0 && <i />}</span>
-          <span>{typing.out[1]}{typing.activeLine === 1 && <i />}</span>
-        </h1>
-      </div>
-      <a className="room-language" href={`/${lang === 'en' ? 'zh' : 'en'}/`} onClick={(event) => event.stopPropagation()}>
-        <Globe2 />{lang === 'en' ? '中文' : 'EN'}
-      </a>
-      <p className="room-hint">{lifted ? t.explore : t.click}<i /></p>
-      <button className={`enter-reading ${typing.done ? 'show' : ''}`} onClick={() => setDismissed(true)}>
-        <kbd>↵</kbd>{t.enter}
-      </button>
-    </section>
-  );
+      {mode === 'fly' && !seated && <fieldset className="room-movement" aria-label={t.fly}>
+        {moveButtons.map(({ key, title, icon: Icon, axis, value }) => <button key={key} className={`move-${key}`} title={title} aria-label={title}
+          onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); movement.current[axis] = value; }}
+          onPointerUp={() => { movement.current[axis] = 0; }}
+          onPointerCancel={() => { movement.current[axis] = 0; }}
+          onLostPointerCapture={() => { movement.current[axis] = 0; }}
+          onKeyDown={(event) => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); movement.current[axis] = value; } }}
+          onKeyUp={() => { movement.current[axis] = 0; }} onBlur={() => { movement.current[axis] = 0; }}
+        ><Icon /></button>)}
+      </fieldset>}
+    </>}
+    {artwork && !tv && <aside className="room-focus-panel" aria-label={t.artwork}>
+      <div><p>{artwork.title}</p><button aria-label={t.close} onClick={closeArtwork}><X /></button></div>
+      <nav aria-label={t.artwork}>{ARTWORKS.map((art) => <button key={art.id} aria-pressed={art.id === artId} onClick={() => openArtwork(art.id)}>{art.id === 'tagore' ? 'Stray Birds' : art.title}</button>)}</nav>
+    </aside>}
+    {seated && !tv && !artwork && <button className="room-seat-return" onClick={toggleSeat}>{lang==='zh'?'起身 · 返回原视角':'Stand up · Return'}</button>}
+    <p className={`room-hint ${mode === 'fly' ? 'fly-hint' : ''}`}>{tip || (lifted ? (mode === 'fly' ? t.flyHint : t.explore) : t.click)}</p>
+    <button disabled={tv} className="enter-reading show" onClick={() => setDismissed(true)}><kbd>↵</kbd>{t.enter}</button>
+    <Dialog open={modalOpen} onOpenChange={setHelp}>
+      <DialogContent className="room-dialog room-help" showCloseButton={false} finalFocus={returnFocus}>
+        <div className="room-dialog-heading">
+          <div><DialogTitle>{t.help}</DialogTitle><DialogDescription>{lang === 'zh' ? '慢慢逛，像在自己的房间一样。' : 'Take your time. Make yourself at home.'}</DialogDescription></div>
+          <DialogClose className="room-dialog-close" aria-label={t.close}><X /></DialogClose>
+        </div>
+        <dl className="room-help-list">
+          <div><dt>{t.orbit}</dt><dd>{t.explore}</dd></div>
+          <div><dt>{t.fly}</dt><dd>{t.flyHint}{lang === 'zh' ? '。触屏：拖动环顾，按住方向按钮移动。相机到墙面会停下。' : '. Touch: drag to look, hold the arrows to move. Movement stops at the walls.'}</dd></div>
+          <div><dt>{t.inspect}</dt><dd>{lang === 'zh' ? '点击照片，在房间里靠近观看；按 Esc 或关闭按钮回到原来的位置。点击台灯或窗户切换光线。' : 'Click a picture to move closer in the room. Esc or the close button returns to your previous position. Click the lamp or window to change the light.'}</dd></div>
+        </dl>
+        <button className="room-toy-button" onClick={() => { setHelp(false); setArtId(null); setMode('orbit'); setResetId((value) => value + 1); setToy((value) => value + 1); }}><Sparkles />{t.toy}</button>
+      </DialogContent>
+    </Dialog>
+  </section>;
 }

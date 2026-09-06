@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Language } from '@/lib/content';
+import { GAME_STORAGE, readGameBest, saveGameBest } from '@/lib/games';
+import type { GamePresentation } from '@/lib/games';
 
 type Point = { x: number; y: number };
 type Direction = Point;
@@ -27,7 +28,7 @@ function makeFood(occupied: Point[]): Point {
   return open[Math.floor(Math.random() * open.length)] || { x: 4, y: 4 };
 }
 
-export function SnakeGame({ lang }: { lang: Language }) {
+export function SnakeGame({ lang, presentation = 'page', inputEnabled = true }: GamePresentation) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const directionRef = useRef<Direction>({ x: 1, y: 0 });
   const queuedRef = useRef<Direction>({ x: 1, y: 0 });
@@ -36,21 +37,26 @@ export function SnakeGame({ lang }: { lang: Language }) {
   const [food, setFood] = useState<Point>(() => makeFood(INITIAL));
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
+  const scoreRef = useRef(0);
+  useEffect(() => { scoreRef.current = score; }, [score]);
+  useEffect(() => () => { saveGameBest(GAME_STORAGE.snake, scoreRef.current); }, []);
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setBest(Number(localStorage.getItem('crazyczy-snake-best') || 0)));
+    const frame = requestAnimationFrame(() => setBest(readGameBest(GAME_STORAGE.snake)));
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  function queue(next: Direction) {
+  const queue = useCallback((next: Direction) => {
+    if (!inputEnabled) return;
     const current = directionRef.current;
     if (next.x + current.x !== 0 || next.y + current.y !== 0) queuedRef.current = next;
-  }
+  }, [inputEnabled]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (!inputEnabled || event.ctrlKey || event.metaKey || event.altKey) return;
       const next = DIRECTIONS[event.key];
       if (!next) return;
       event.preventDefault();
@@ -59,10 +65,10 @@ export function SnakeGame({ lang }: { lang: Language }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [running, gameOver]);
+  }, [running, gameOver, inputEnabled, queue]);
 
   useEffect(() => {
-    if (!running) return;
+    if (!running || !inputEnabled) return;
     const timer = window.setInterval(() => {
       const nextDirection = queuedRef.current;
       directionRef.current = nextDirection;
@@ -76,7 +82,7 @@ export function SnakeGame({ lang }: { lang: Language }) {
           setGameOver(true);
           setBest((currentBest) => {
             const nextBest = Math.max(currentBest, score);
-            localStorage.setItem('crazyczy-snake-best', String(nextBest));
+            saveGameBest(GAME_STORAGE.snake, nextBest);
             return nextBest;
           });
           return currentSnake;
@@ -93,14 +99,14 @@ export function SnakeGame({ lang }: { lang: Language }) {
       });
     }, Math.max(70, 150 - score * 4));
     return () => window.clearInterval(timer);
-  }, [running, food, score]);
+  }, [running, food, score, inputEnabled]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext('2d');
     if (!context) return;
-    const style = getComputedStyle(document.documentElement);
+    const style = getComputedStyle(canvas);
     context.fillStyle = style.getPropertyValue('--game-bg').trim() || '#050505';
     context.fillRect(0, 0, SIZE * CELL, SIZE * CELL);
     context.strokeStyle = style.getPropertyValue('--game-grid').trim() || '#202020';
@@ -117,13 +123,18 @@ export function SnakeGame({ lang }: { lang: Language }) {
     context.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
   }, [snake, food]);
 
+  function clearInput() { pointerRef.current = null; queuedRef.current = directionRef.current; setRunning(false); }
   useEffect(() => {
-    const onVisibility = () => { if (document.hidden) setRunning(false); };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, []);
+    const stop = () => { pointerRef.current = null; queuedRef.current = directionRef.current; setRunning(false); };
+    const visibility = () => { if (document.hidden) stop(); };
+    window.addEventListener('blur', stop);
+    document.addEventListener('visibilitychange', visibility);
+    if (!inputEnabled) stop();
+    return () => { window.removeEventListener('blur', stop); document.removeEventListener('visibilitychange', visibility); pointerRef.current = null; queuedRef.current = directionRef.current; };
+  }, [inputEnabled]);
 
   function reset() {
+    setBest(saveGameBest(GAME_STORAGE.snake, scoreRef.current));
     directionRef.current = { x: 1, y: 0 };
     queuedRef.current = { x: 1, y: 0 };
     setSnake(INITIAL);
@@ -133,6 +144,7 @@ export function SnakeGame({ lang }: { lang: Language }) {
   }
 
   function start() {
+    if (!inputEnabled) return;
     if (gameOver) reset();
     setRunning(true);
   }
@@ -153,11 +165,12 @@ export function SnakeGame({ lang }: { lang: Language }) {
     : { title: 'Snake', score: 'Score', best: 'Best', start: 'Start', pause: 'Pause', resume: 'Resume', restart: 'Restart', over: 'Game over' };
 
   return (
-    <section className="game-stage" aria-label={text.title}>
+    <section className={`game-stage ${presentation === 'tv' ? 'tv-game tv-snake' : ''}`} inert={!inputEnabled} data-running={running} aria-label={text.title}>
       <div className="game-status"><span>{text.score}: <b>{score}</b></span><span>{text.best}: <b>{best}</b></span></div>
       <div className="canvas-wrap">
-        <canvas ref={canvasRef} width={400} height={400} aria-label={text.title}
-          onPointerDown={(event) => { pointerRef.current = { x: event.clientX, y: event.clientY }; }}
+        <canvas tabIndex={0} ref={canvasRef} width={400} height={400} aria-label={text.title}
+          onPointerCancel={clearInput} onLostPointerCapture={() => { pointerRef.current = null; }}
+          onPointerDown={(event) => { if (!inputEnabled) return; event.currentTarget.setPointerCapture(event.pointerId); pointerRef.current = { x: event.clientX, y: event.clientY }; }}
           onPointerUp={(event) => swipeEnd({ x: event.clientX, y: event.clientY })} />
         {gameOver && <div className="game-overlay"><strong>{text.over}</strong><span>{text.score}: {score}</span></div>}
       </div>

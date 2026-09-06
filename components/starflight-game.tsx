@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Language } from '@/lib/content';
+import { GAME_STORAGE, readGameBest, saveGameBest } from '@/lib/games';
+import type { GamePresentation } from '@/lib/games';
 
 type Obstacle = { x: number; y: number; width: number; height: number };
 
 const WIDTH = 360;
 const HEIGHT = 520;
 
-export function StarflightGame({ lang }: { lang: Language }) {
+export function StarflightGame({ lang, presentation = 'page', inputEnabled = true }: GamePresentation) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef({ x: WIDTH / 2 - 14, y: HEIGHT - 58, width: 28, height: 32 });
   const obstaclesRef = useRef<Obstacle[]>([]);
@@ -23,9 +24,12 @@ export function StarflightGame({ lang }: { lang: Language }) {
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
+  const scoreRef = useRef(0);
+  useEffect(() => { scoreRef.current = score; }, [score]);
+  useEffect(() => () => { saveGameBest(GAME_STORAGE.starflight, scoreRef.current); }, []);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setBest(Number(localStorage.getItem('crazyczy-starflight-best') || 0)));
+    const frame = requestAnimationFrame(() => setBest(readGameBest(GAME_STORAGE.starflight)));
     return () => cancelAnimationFrame(frame);
   }, []);
 
@@ -33,7 +37,7 @@ export function StarflightGame({ lang }: { lang: Language }) {
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     if (!canvas || !context) return;
-    const style = getComputedStyle(document.documentElement);
+    const style = getComputedStyle(canvas);
     context.fillStyle = style.getPropertyValue('--game-bg').trim() || '#050505';
     context.fillRect(0, 0, WIDTH, HEIGHT);
     context.fillStyle = style.getPropertyValue('--game-star').trim() || '#aaa';
@@ -54,10 +58,11 @@ export function StarflightGame({ lang }: { lang: Language }) {
     context.fillRect(player.x + 15, player.y + 28, 4, 4);
   }
 
-  useEffect(() => { draw(); }, []);
+  useEffect(() => { draw(); return () => cancelAnimationFrame(animationRef.current); }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (!inputEnabled || event.ctrlKey || event.metaKey || event.altKey) return;
       if (['ArrowLeft', 'a', 'A'].includes(event.key)) { event.preventDefault(); keysRef.current.left = true; }
       if (['ArrowRight', 'd', 'D'].includes(event.key)) { event.preventDefault(); keysRef.current.right = true; }
     };
@@ -67,11 +72,11 @@ export function StarflightGame({ lang }: { lang: Language }) {
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
-  }, []);
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); keysRef.current = { left: false, right: false }; };
+  }, [inputEnabled]);
 
   useEffect(() => {
-    if (!running) return;
+    if (!running || !inputEnabled) return;
     lastRef.current = performance.now();
     const frame = (now: number) => {
       const delta = Math.min(32, now - lastRef.current);
@@ -103,7 +108,7 @@ export function StarflightGame({ lang }: { lang: Language }) {
         setGameOver(true);
         setBest((currentBest) => {
           const nextBest = Math.max(currentBest, nextScore);
-          localStorage.setItem('crazyczy-starflight-best', String(nextBest));
+          saveGameBest(GAME_STORAGE.starflight, nextBest);
           return nextBest;
         });
         return;
@@ -112,31 +117,38 @@ export function StarflightGame({ lang }: { lang: Language }) {
     };
     animationRef.current = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(animationRef.current);
-  }, [running]);
+  }, [running, inputEnabled]);
 
+  function clearInput() { keysRef.current = { left: false, right: false }; draggingRef.current = false; setRunning(false); }
   useEffect(() => {
-    const onVisibility = () => { if (document.hidden) setRunning(false); };
-    document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, []);
+    const stop = () => { keysRef.current = { left: false, right: false }; draggingRef.current = false; setRunning(false); };
+    const visibility = () => { if (document.hidden) stop(); };
+    window.addEventListener('blur', stop);
+    document.addEventListener('visibilitychange', visibility);
+    if (!inputEnabled) stop();
+    return () => { window.removeEventListener('blur', stop); document.removeEventListener('visibilitychange', visibility); keysRef.current = { left: false, right: false }; draggingRef.current = false; };
+  }, [inputEnabled]);
 
   function reset() {
+    setBest(saveGameBest(GAME_STORAGE.starflight, scoreRef.current));
     playerRef.current.x = WIDTH / 2 - 14;
     obstaclesRef.current = [];
     distanceRef.current = 0;
     spawnRef.current = 0;
     setScore(0);
     setGameOver(false);
-    requestAnimationFrame(draw);
+    cancelAnimationFrame(animationRef.current);
+    animationRef.current = requestAnimationFrame(draw);
   }
 
   function start() {
+    if (!inputEnabled) return;
     if (gameOver) reset();
     setRunning(true);
   }
 
   function drag(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (!draggingRef.current) return;
+    if (!draggingRef.current || !inputEnabled) return;
     const rect = event.currentTarget.getBoundingClientRect();
     playerRef.current.x = Math.max(0, Math.min(WIDTH - 28, (event.clientX - rect.left) * WIDTH / rect.width - 14));
     draw();
@@ -147,11 +159,12 @@ export function StarflightGame({ lang }: { lang: Language }) {
     : { title: 'Starflight', score: 'Distance', best: 'Best', start: 'Launch', pause: 'Pause', resume: 'Resume', restart: 'Restart', over: 'Ship lost' };
 
   return (
-    <section className="game-stage starflight-stage" aria-label={text.title}>
+    <section className={`game-stage starflight-stage ${presentation === 'tv' ? 'tv-game tv-starflight' : ''}`} inert={!inputEnabled} data-running={running} aria-label={text.title}>
       <div className="game-status"><span>{text.score}: <b>{score}</b></span><span>{text.best}: <b>{best}</b></span></div>
       <div className="canvas-wrap">
-        <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} aria-label={text.title}
-          onPointerDown={(event) => { draggingRef.current = true; event.currentTarget.setPointerCapture(event.pointerId); drag(event); }}
+        <canvas tabIndex={0} ref={canvasRef} width={WIDTH} height={HEIGHT} aria-label={text.title}
+          onPointerCancel={clearInput} onLostPointerCapture={() => { draggingRef.current = false; }}
+          onPointerDown={(event) => { if (!inputEnabled) return; draggingRef.current = true; event.currentTarget.setPointerCapture(event.pointerId); drag(event); }}
           onPointerMove={drag}
           onPointerUp={() => { draggingRef.current = false; }} />
         {gameOver && <div className="game-overlay"><strong>{text.over}</strong><span>{text.score}: {score}</span></div>}
@@ -161,8 +174,8 @@ export function StarflightGame({ lang }: { lang: Language }) {
         <Button variant="outline" onClick={() => { setRunning(false); reset(); }}>{text.restart}</Button>
       </div>
       <div className="flight-controls">
-        <button onPointerDown={() => { keysRef.current.left = true; }} onPointerUp={() => { keysRef.current.left = false; }} onPointerLeave={() => { keysRef.current.left = false; }} aria-label="Left">←</button>
-        <button onPointerDown={() => { keysRef.current.right = true; }} onPointerUp={() => { keysRef.current.right = false; }} onPointerLeave={() => { keysRef.current.right = false; }} aria-label="Right">→</button>
+        <button onPointerDown={(event) => { if (!inputEnabled) return; event.currentTarget.setPointerCapture(event.pointerId); keysRef.current.left = true; }} onPointerCancel={clearInput} onLostPointerCapture={() => { keysRef.current.left = false; }} onPointerUp={() => { keysRef.current.left = false; }} onPointerLeave={() => { keysRef.current.left = false; }} aria-label="Left">←</button>
+        <button onPointerDown={(event) => { if (!inputEnabled) return; event.currentTarget.setPointerCapture(event.pointerId); keysRef.current.right = true; }} onPointerCancel={clearInput} onLostPointerCapture={() => { keysRef.current.right = false; }} onPointerUp={() => { keysRef.current.right = false; }} onPointerLeave={() => { keysRef.current.right = false; }} aria-label="Right">→</button>
       </div>
     </section>
   );

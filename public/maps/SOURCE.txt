@@ -1,0 +1,3 @@
+Natural Earth 1:50m land, public domain.
+https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_land.geojson
+Equirectangular; longitude -180..180, latitude -85..85.
