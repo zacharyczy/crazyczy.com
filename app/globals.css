@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import './theme.css';
+@import './room-study.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -464,7 +465,21 @@
 .home-experience.has-hotspot .room-canvas canvas { cursor: pointer; }
 .room-pixel-overlay { opacity: .09; }
 .home-experience .intro-type { transition: opacity .5s, transform .7s; }
-.home-experience.lifted .intro-type { opacity: 0; transform: translateY(-1rem); }
+/* The welcome keeps its original size and location when entering the room. */
+.home-experience .intro-type {
+  top: var(--welcome-top, 6.8rem); left: 1.7rem; right: auto; bottom: auto;
+  width: min(680px, calc(100% - 9rem));
+}
+.home-experience.is-viewing-object .intro-type { visibility: hidden; opacity: 0; }
+.home-experience .room-toolbar { top: 1.5rem; }
+@media (max-width: 700px) {
+ .home-experience .intro-type { top: var(--welcome-top, 12rem); left: 1.1rem; width: calc(100% - 2.2rem); }
+ .home-experience .room-toolbar { top: 1.1rem; }
+}
+@media (max-height: 500px) {
+ .home-experience .intro-type h1 { font-size: 1.3rem; }
+ .home-experience .room-toolbar { top: 1.1rem; }
+}
 .room-loading { position: absolute; z-index: 3; top: 28%; left: 50%; width: min(80%, 30rem); transform: translateX(-50%); color: #fff4db; font-size: 1rem; text-align: center; pointer-events: none; }
 .room-toolbar { position: absolute; z-index: 7; top: 1.5rem; left: 1.7rem; display: flex; align-items: center; flex-wrap: wrap; gap: .3rem; max-width: calc(100% - 8.5rem); padding: .35rem; border: 1px solid rgb(255 235 193 / 30%); border-radius: .5rem; background: var(--room-panel); box-shadow: 0 4px 24px rgb(0 0 0 / 16%); backdrop-filter: blur(14px); }
 .room-toolbar button, .room-movement button { display: inline-flex; align-items: center; justify-content: center; min-width: 2.75rem; min-height: 2.75rem; border: 1px solid transparent; border-radius: .25rem; color: var(--room-ink); background: transparent; cursor: pointer; }
@@ -579,7 +594,7 @@
 .tv-game .flight-controls button { min-height:114px; font-size:42px; }
 .tv-game .game-overlay strong { font-size:32px; }
 .tv-game .game-overlay span { font-size:28px; }
-.home-experience.is-watching-tv .room-language, .home-experience.is-watching-tv .room-hint, .home-experience.is-watching-tv .enter-reading, .home-experience.is-watching-tv .intro-type { visibility:hidden; pointer-events:none; }
+.home-experience.is-watching-tv .room-language, .home-experience.is-watching-tv .room-hint, .home-experience.is-watching-tv .enter-reading { visibility:hidden; pointer-events:none; }
 .room-seat-return { position:absolute; z-index:7; bottom:5rem; left:1.7rem; padding:.8rem 1rem; border:1px solid #998766; border-radius:.3rem; background:#29392d; color:#e5d8b1; cursor:pointer; }
 @media(max-width:760px) { .room-toolbar { flex-wrap:wrap; max-width:calc(100% - 6rem); } .room-seat-return { left:.9rem; bottom:8rem; } }
 .tv-power-surface { transition: opacity .45s ease; animation: tv-power-on .45s ease both; }
