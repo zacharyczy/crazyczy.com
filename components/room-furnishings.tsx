@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { usePixelMaterials } from './room-materials';
@@ -164,7 +165,26 @@ export function RoomShell() {
   );
 }
 
-export function WoodenDoor() {
+export function WoodenDoor({
+  opening = false,
+  reducedMotion = false,
+  onOpened,
+}: { opening?: boolean; reducedMotion?: boolean; onOpened?: () => void } = {}) {
+  const hinge = useRef<THREE.Group>(null);
+  const progress = useRef(0),
+    completed = useRef(false);
+  useFrame((_, delta) => {
+    if (!hinge.current || !opening || completed.current) return;
+    progress.current = reducedMotion
+      ? 1
+      : Math.min(1, progress.current + Math.min(delta, 0.05) / 1.25);
+    const t = progress.current;
+    hinge.current.rotation.y = -(t * t * (3 - 2 * t)) * Math.PI * 0.54;
+    if (t === 1) {
+      completed.current = true;
+      onOpened?.();
+    }
+  });
   const maps = usePixelMaterials();
   return (
     <group position={[3.8, 0, 6.56]} rotation={[0, Math.PI, 0]}>
@@ -178,64 +198,68 @@ export function WoodenDoor() {
         <boxGeometry args={[2.16, 0.18, 0.22]} />
         <meshStandardMaterial map={maps.walnut} />
       </mesh>
-      <mesh position={[0, 2.04, 0]} castShadow receiveShadow>
-        <boxGeometry args={[1.84, 4.03, 0.14]} />
-        <meshStandardMaterial
-          map={maps.walnut}
-          color="#e2bd88"
-          roughness={0.7}
-        />
-      </mesh>
-      {[0.91, 2.96].map((y) => (
-        <group key={y} position={[0, y, 0.08]}>
-          <mesh>
-            <boxGeometry args={[1.45, 1.58, 0.025]} />
+      <group ref={hinge} name="door-leaf" position={[-0.92, 0, 0]}>
+        <group position={[0.92, 0, 0]}>
+          <mesh position={[0, 2.04, 0]} castShadow receiveShadow>
+            <boxGeometry args={[1.84, 4.03, 0.14]} />
             <meshStandardMaterial
-              map={maps.oak}
-              color="#a88865"
-              roughness={0.8}
+              map={maps.walnut}
+              color="#e2bd88"
+              roughness={0.7}
             />
           </mesh>
-          {[-1, 1].map((side) => (
-            <group key={side}>
-              <mesh position={[side * 0.73, 0, 0.025]}>
-                <boxGeometry args={[0.055, 1.64, 0.05]} />
-                <meshStandardMaterial map={maps.walnut} color="#e1be8f" />
+          {[0.91, 2.96].map((y) => (
+            <group key={y} position={[0, y, 0.08]}>
+              <mesh>
+                <boxGeometry args={[1.45, 1.58, 0.025]} />
+                <meshStandardMaterial
+                  map={maps.oak}
+                  color="#a88865"
+                  roughness={0.8}
+                />
               </mesh>
-              <mesh position={[0, side * 0.79, 0.025]}>
-                <boxGeometry args={[1.49, 0.055, 0.05]} />
-                <meshStandardMaterial map={maps.walnut} color="#e1be8f" />
-              </mesh>
+              {[-1, 1].map((side) => (
+                <group key={side}>
+                  <mesh position={[side * 0.73, 0, 0.025]}>
+                    <boxGeometry args={[0.055, 1.64, 0.05]} />
+                    <meshStandardMaterial map={maps.walnut} color="#e1be8f" />
+                  </mesh>
+                  <mesh position={[0, side * 0.79, 0.025]}>
+                    <boxGeometry args={[1.49, 0.055, 0.05]} />
+                    <meshStandardMaterial map={maps.walnut} color="#e1be8f" />
+                  </mesh>
+                </group>
+              ))}
             </group>
           ))}
+          <mesh position={[0.67, 1.99, 0.14]}>
+            <boxGeometry args={[0.13, 0.35, 0.045]} />
+            <meshStandardMaterial
+              color="#b79751"
+              metalness={0.75}
+              roughness={0.3}
+            />
+          </mesh>
+          <mesh position={[0.57, 2.07, 0.23]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.035, 0.035, 0.29, 12]} />
+            <meshStandardMaterial
+              color="#d7b568"
+              metalness={0.72}
+              roughness={0.27}
+            />
+          </mesh>
+          {[0.55, 2, 3.45].map((y) => (
+            <mesh key={y} position={[-0.88, y, 0.11]}>
+              <cylinderGeometry args={[0.035, 0.035, 0.18, 10]} />
+              <meshStandardMaterial
+                color="#9d7c46"
+                metalness={0.7}
+                roughness={0.4}
+              />
+            </mesh>
+          ))}
         </group>
-      ))}
-      <mesh position={[0.67, 1.99, 0.14]}>
-        <boxGeometry args={[0.13, 0.35, 0.045]} />
-        <meshStandardMaterial
-          color="#b79751"
-          metalness={0.75}
-          roughness={0.3}
-        />
-      </mesh>
-      <mesh position={[0.57, 2.07, 0.23]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.035, 0.035, 0.29, 12]} />
-        <meshStandardMaterial
-          color="#d7b568"
-          metalness={0.72}
-          roughness={0.27}
-        />
-      </mesh>
-      {[0.55, 2, 3.45].map((y) => (
-        <mesh key={y} position={[-0.88, y, 0.11]}>
-          <cylinderGeometry args={[0.035, 0.035, 0.18, 10]} />
-          <meshStandardMaterial
-            color="#9d7c46"
-            metalness={0.7}
-            roughness={0.4}
-          />
-        </mesh>
-      ))}
+      </group>
       <mesh position={[0, 0.04, 0.09]}>
         <boxGeometry args={[1.88, 0.06, 0.32]} />
         <meshStandardMaterial map={maps.oak} />

@@ -1,5 +1,7 @@
 'use client';
 
+import { pageHref } from '@/lib/routes';
+
 import { useState } from 'react';
 import type { Language, Post } from '@/lib/content';
 
@@ -84,7 +86,7 @@ export function WritingIndex({
         <div className="writing-list">
           {visible.map((post, index) => (
             <a
-              href={`/${lang}/blog/${post.slug}/`}
+              href={pageHref(lang, `blog/${post.slug}`)}
               className="writing-row"
               key={post.slug}
               onClick={

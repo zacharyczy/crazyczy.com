@@ -9,6 +9,7 @@ export type RoomView = {
   position: [number, number, number];
   width: number;
   height: number;
+  fov?: number;
   eye?: [number, number, number];
   normal?: [number, number, number];
   padding?: number;
@@ -140,17 +141,18 @@ export function RoomNavigation({
       scratch.dummy.position.copy(eye);
       scratch.dummy.up.set(0, 1, 0);
       scratch.dummy.lookAt(target);
-      const fov = active.eye
-        ? 49
-        : Math.max(
-            49,
-            Math.min(
-              105,
-              THREE.MathUtils.radToDeg(
-                2 * Math.atan(h / (2 * eye.distanceTo(target))),
+      const fov =
+        active.eye && active.fov === undefined
+          ? 49
+          : Math.max(
+              active.fov ?? 49,
+              Math.min(
+                105,
+                THREE.MathUtils.radToDeg(
+                  2 * Math.atan(h / (2 * eye.distanceTo(target))),
+                ),
               ),
-            ),
-          );
+            );
       destination = {
         position: eye,
         quaternion: scratch.dummy.quaternion.clone(),

@@ -1,3 +1,4 @@
+import { pageHref } from '@/lib/routes';
 import type { Language } from '@/lib/content';
 import { getPosts } from '@/lib/content';
 import { HomeExperience } from './home-experience';
@@ -16,7 +17,8 @@ export function HomeView({ lang }: { lang: Language }) {
         '@type': 'WebSite',
         name: 'CZY',
         url: 'https://crazyczy.com',
-        inLanguage: ['zh-CN', 'en'],
+        inLanguage: 'en',
+        description: 'An English-first personal site with Chinese support',
       },
     ],
   };
@@ -40,7 +42,7 @@ export function PostRow({
 }) {
   return (
     <a
-      href={`/${lang}/blog/${post.slug}/`}
+      href={pageHref(lang, `blog/${post.slug}`)}
       className="post-row group grid gap-4 py-6 sm:grid-cols-[110px_1fr_auto] sm:items-start"
     >
       <time className="font-mono text-[11px] tracking-wider text-slate-600">

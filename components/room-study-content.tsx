@@ -1,4 +1,5 @@
 'use client';
+import { parseSitePath } from '@/lib/routes';
 import { RoomGuideContent } from './room-guide-content';
 import { useEffect, useRef, useState } from 'react';
 import { Html } from '@react-three/drei';
@@ -45,10 +46,13 @@ function Reader({
         const url = new URL(a.href, location.href);
         if (url.origin !== location.origin) return;
         e.preventDefault();
-        const parts = url.pathname.split('/').filter(Boolean);
-        if (parts[0] === 'en' || parts[0] === 'zh') onLanguage(parts[0]);
-        if (parts[1] === 'blog' && parts[2]) setSlug(parts[2]);
-        else setSlug(null);
+        const destination = parseSitePath(url.pathname);
+        onLanguage(destination.lang);
+        setSlug(
+          destination.path.startsWith('blog/')
+            ? destination.path.slice(5)
+            : null,
+        );
       }}
     >
       {post ? (

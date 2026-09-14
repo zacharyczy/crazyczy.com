@@ -1,7 +1,7 @@
 'use client';
 
 import { KeyboardEvent, useState } from 'react';
-import { homeHref } from '@/lib/routes';
+import { pageHref } from '@/lib/routes';
 import type { Language } from '@/lib/content';
 
 type Line = { kind: 'command' | 'output' | 'error'; text: string };
@@ -36,9 +36,7 @@ export function TerminalView({
       return;
     }
     const path = route === 'home' ? '' : route;
-    window.location.assign(
-      path ? '/' + lang + '/' + path + '/' : homeHref(lang),
-    );
+    window.location.assign(pageHref(lang, path));
   }
 
   function execute(raw: string) {
@@ -90,7 +88,7 @@ export function TerminalView({
       if (onLanguage) onLanguage();
       else
         window.location.assign(
-          '/' + (lang === 'zh' ? 'en' : 'zh') + '/terminal/',
+          pageHref(lang === 'zh' ? 'en' : 'zh', 'terminal'),
         );
     } else if (name === 'cd') {
       if (!argument) {

@@ -141,7 +141,10 @@ try {
     }
     await page.waitForTimeout(100);
     const tokens = JSON.parse(await canvas.getAttribute('data-tokens'));
-    assert.ok(tokens[0].x > -1.1 && tokens[0].z < .06, 'drag slides past first contact and deflects between neighbouring tokens');
+    assert.ok(
+      tokens[0].x > -1.1 && tokens[0].z < 0.06,
+      'drag slides past first contact and deflects between neighbouring tokens',
+    );
     for (let i = 1; i < 22; i++)
       assert.ok(
         Math.hypot(tokens[0].x - tokens[i].x, tokens[0].z - tokens[i].z) >
@@ -152,7 +155,7 @@ try {
     await page.waitForTimeout(150);
     await canvas.focus();
     await page.keyboard.press('Enter');
-    await page.waitForURL(url=>/^\/en\/blog\/?$/.test(url.pathname));
+    await page.waitForURL((url) => /^\/blog\/?$/.test(url.pathname));
     await page.waitForTimeout(2200);
     assert.equal(await page.locator('.home-return').count(), 0);
     await page.locator('main .writing-showcase').waitFor();
@@ -166,7 +169,7 @@ try {
     await page
       .getByRole('button', { name: 'Step into my room', exact: true })
       .waitFor();
-    await page.goto('http://localhost:3000/en/about', {
+    await page.goto('http://localhost:3000/about', {
       waitUntil: 'domcontentloaded',
     });
     await page.getByText('China · UTC+8', { exact: true }).waitFor();
@@ -180,10 +183,17 @@ try {
     console.log(results.at(-1));
     await ctx.close();
   }
-  const zh=await browser.newPage({viewport:{width:1200,height:850},reducedMotion:'reduce'});
-  await zh.goto('http://localhost:3000/zh',{waitUntil:'domcontentloaded'});await zh.waitForTimeout(8500);
-  await zh.keyboard.press('Enter');await zh.waitForURL(url=>/^\/zh\/blog\/?$/.test(url.pathname));
-  await zh.locator('main .writing-showcase').waitFor();results.push('Chinese welcome Enter opens Chinese Writing directly');await zh.close();
+  const zh = await browser.newPage({
+    viewport: { width: 1200, height: 850 },
+    reducedMotion: 'reduce',
+  });
+  await zh.goto('http://localhost:3000/zh', { waitUntil: 'domcontentloaded' });
+  await zh.waitForTimeout(8500);
+  await zh.keyboard.press('Enter');
+  await zh.waitForURL((url) => /^\/blog\/zh\/?$/.test(url.pathname));
+  await zh.locator('main .writing-showcase').waitFor();
+  results.push('Chinese welcome Enter opens Chinese Writing directly');
+  await zh.close();
   assert.deepEqual(errors, []);
   fs.writeFileSync(
     `${out}/results.json`,

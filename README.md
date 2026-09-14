@@ -1,11 +1,11 @@
 # crazyczy.com
 
-The source for [crazyczy.com](https://crazyczy.com), Zachary Cheng's bilingual personal website.
+The source for [crazyczy.com](https://crazyczy.com), Zachary Cheng's English-first personal website with Chinese support.
 
 ## What is here
 
-- Chinese and English writing, project notes, tags, RSS, and sitemap
-- Light and dark themes that follow the visitor's system preference
+- English writing and project notes with Chinese translations, tags, RSS, and sitemap
+- Light theme by default, with a saved dark-theme option
 - Two small browser games: Snake and Starflight
 - An interactive, sandboxed terminal-style navigation page
 - Responsive layouts and accessible reduced-motion behavior
@@ -33,7 +33,7 @@ npm run build
 
 Posts live in `content/posts/zh` and `content/posts/en`. Each translation pair shares a `translationKey`, while either language can be published independently.
 
-The site currently uses explicit article route files under `app/<lang>/blog/<slug>/page.tsx`. Add the matching route when adding a new post.
+The site currently uses explicit article route files under `app/blog/<slug>/page.tsx` (English) and `app/blog/<slug>/zh/page.tsx` (Chinese). Add the matching route when adding a new post.
 
 ## Deployment
 
@@ -42,3 +42,9 @@ Pushing to `main` runs the GitHub Actions deployment workflow and publishes the 
 ## Typography
 
 The interface uses [Fusion Pixel Font](https://github.com/TakWolf/fusion-pixel-font), distributed under the SIL Open Font License 1.1. Article text uses a system serif font stack for readability.
+
+## Addresses and room location
+
+English is the primary site: `/blog/`, `/projects/`, `/about/`. Chinese translations append `/zh/`: `/blog/zh/`, `/blog/<slug>/zh/`. `/zh/` is the Chinese welcome room. Old `/en/...` and `/zh/...` URLs permanently redirect to their corresponding canonical pages. The default RSS feed contains English articles.
+
+The worker serves `/api/visitor-location` directly from Cloudflare's original request metadata. It returns rounded approximate network coordinates and a location label, never the IP address, and uses private/no-store caching. No location is retained in browser storage or the database. VPNs can change this estimate. Local development or unavailable metadata leaves the map unmarked. The wooden door opens onto a preview generated from the current Writing titles, then navigates to the canonical Writing page.

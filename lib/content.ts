@@ -1,3 +1,5 @@
+import enPpt from '@/content/posts/en/ppt-to-chinese.md?raw';
+import zhPpt from '@/content/posts/zh/ppt-to-chinese.md?raw';
 import enHello from '@/content/posts/en/hello-world.md?raw';
 import enCompiler from '@/content/posts/en/compiler.md?raw';
 import enCrazyczy from '@/content/posts/en/crazyczy.md?raw';
@@ -29,12 +31,27 @@ function parsePost(slug: string, raw: string): Post {
   const values: Record<string, string> = {};
   for (const line of match[1].split(/\r?\n/)) {
     const separator = line.indexOf(':');
-    if (separator > -1) values[line.slice(0, separator).trim()] = line.slice(separator + 1).trim();
+    if (separator > -1)
+      values[line.slice(0, separator).trim()] = line
+        .slice(separator + 1)
+        .trim();
   }
-  const required = ['title', 'description', 'publishDate', 'updatedDate', 'lang', 'translationKey', 'tags', 'draft', 'coverImage'];
-  for (const field of required) if (!values[field]) throw new Error(`Missing ${field} in ${slug}`);
+  const required = [
+    'title',
+    'description',
+    'publishDate',
+    'updatedDate',
+    'lang',
+    'translationKey',
+    'tags',
+    'draft',
+    'coverImage',
+  ];
+  for (const field of required)
+    if (!values[field]) throw new Error(`Missing ${field} in ${slug}`);
   const lang = values.lang as Language;
-  if (!['zh', 'en'].includes(lang)) throw new Error(`Invalid language in ${slug}`);
+  if (!['zh', 'en'].includes(lang))
+    throw new Error(`Invalid language in ${slug}`);
   return {
     slug,
     title: values.title,
@@ -43,7 +60,10 @@ function parsePost(slug: string, raw: string): Post {
     updatedDate: values.updatedDate,
     lang,
     translationKey: values.translationKey,
-    tags: values.tags.replace(/^\[|\]$/g, '').split(',').map((tag) => tag.trim()),
+    tags: values.tags
+      .replace(/^\[|\]$/g, '')
+      .split(',')
+      .map((tag) => tag.trim()),
     draft: values.draft === 'true',
     coverImage: values.coverImage,
     body: match[2].trim(),
@@ -51,21 +71,33 @@ function parsePost(slug: string, raw: string): Post {
 }
 
 const allPosts = [
-  parsePost('hello-world', zhHello), parsePost('hello-world', enHello),
-  parsePost('gentzen', zhGentzen), parsePost('gentzen', enGentzen),
-  parsePost('compiler', zhCompiler), parsePost('compiler', enCompiler),
-  parsePost('crazyczy', zhCrazyczy), parsePost('crazyczy', enCrazyczy),
+  parsePost('ppt-to-chinese', enPpt),
+  parsePost('ppt-to-chinese', zhPpt),
+  parsePost('hello-world', zhHello),
+  parsePost('hello-world', enHello),
+  parsePost('gentzen', zhGentzen),
+  parsePost('gentzen', enGentzen),
+  parsePost('compiler', zhCompiler),
+  parsePost('compiler', enCompiler),
+  parsePost('crazyczy', zhCrazyczy),
+  parsePost('crazyczy', enCrazyczy),
 ];
 
 export const posts = allPosts.filter((post) => !post.draft);
 export function getPosts(lang: Language) {
-  return posts.filter((post) => post.lang === lang).sort((a, b) => b.publishDate.localeCompare(a.publishDate));
+  return posts
+    .filter((post) => post.lang === lang)
+    .sort((a, b) => b.publishDate.localeCompare(a.publishDate));
 }
 export function getPost(lang: Language, slug: string) {
   return posts.find((post) => post.lang === lang && post.slug === slug);
 }
 export function getTranslation(post: Post) {
-  return posts.find((candidate) => candidate.translationKey === post.translationKey && candidate.lang !== post.lang);
+  return posts.find(
+    (candidate) =>
+      candidate.translationKey === post.translationKey &&
+      candidate.lang !== post.lang,
+  );
 }
 export function getTags(lang: Language) {
   return [...new Set(getPosts(lang).flatMap((post) => post.tags))].sort();

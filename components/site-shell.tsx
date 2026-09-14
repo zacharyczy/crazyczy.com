@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { Language } from '@/lib/content';
-import { homeHref } from '@/lib/routes';
+import { homeHref, pageHref } from '@/lib/routes';
 import { copy } from '@/lib/copy';
 import { ThemeToggle } from './theme-toggle';
 import { SuggestionsPanel } from './suggestions-panel';
@@ -20,18 +20,18 @@ export function SiteShell({
   const t = copy[lang];
   const other = lang === 'zh' ? 'en' : 'zh';
   const otherHref = path
-    ? `/${other}/${path}/`
+    ? pageHref(other, `${path}`)
     : active &&
         ['blog', 'projects', 'games', 'terminal', 'about'].includes(active)
-      ? `/${other}/${active}/`
+      ? pageHref(other, `${active}`)
       : homeHref(other);
   const navItems = [
     ['home', t.home, homeHref(lang)],
-    ['blog', t.blog, `/${lang}/blog/`],
-    ['projects', t.projects, `/${lang}/projects/`],
-    ['games', t.games, `/${lang}/games/`],
-    ['terminal', t.terminal, `/${lang}/terminal/`],
-    ['about', t.about, `/${lang}/about/`],
+    ['blog', t.blog, pageHref(lang, `blog`)],
+    ['projects', t.projects, pageHref(lang, `projects`)],
+    ['games', t.games, pageHref(lang, `games`)],
+    ['terminal', t.terminal, pageHref(lang, `terminal`)],
+    ['about', t.about, pageHref(lang, `about`)],
   ];
   return (
     <main className="min-h-screen overflow-hidden">

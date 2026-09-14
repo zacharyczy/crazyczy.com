@@ -1,5 +1,7 @@
 'use client';
 
+import { pageHref } from '@/lib/routes';
+
 import { Canvas, useFrame } from '@react-three/fiber';
 import {
   ContactShadows,
@@ -42,6 +44,10 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import * as THREE from 'three';
+import { useVisitorLocation } from './use-visitor-location';
+import { mapPoint, type VisitorLocation } from '@/lib/visitor-location';
+import { RoomDoor, DOOR_VIEW } from './room-door';
+import { doorLabel } from '@/lib/room-guide';
 import { RoomOnboarding } from './room-onboarding';
 import { RoomNavigation } from './room-navigation';
 import type { MoveInput, ViewMode } from './room-navigation';
@@ -65,7 +71,6 @@ import type { RoomArtwork } from './room-artworks';
 import { PixelMaterials, usePixelMaterials } from './room-materials';
 import {
   RoomShell,
-  WoodenDoor,
   ReadingSofa,
   BrushDesk,
   DetailedCube,
@@ -342,7 +347,7 @@ function WallPhoto({
   );
 }
 
-function WorldMap() {
+function WorldMap({ location }: { location: VisitorLocation | null }) {
   const source = useTexture('/maps/world-land.png');
   const texture = useMemo(() => {
     const map = source.clone();
@@ -354,12 +359,7 @@ function WorldMap() {
     return map;
   }, [source]);
   useEffect(() => () => texture.dispose(), [texture]);
-  // Same equirectangular projection as the map; an approximate eastern mainland point.
-  const pin: [number, number, number] = [
-    (117 / 360) * 3.72,
-    (32 / 170) * 2.15,
-    0.15,
-  ];
+  const pin = location ? mapPoint(location) : null;
   return (
     <group position={[-6.38, 3.78, -3.1]} rotation={[0, Math.PI / 2, 0]}>
       <mesh castShadow>
@@ -389,20 +389,22 @@ function WorldMap() {
           />
         </mesh>
       ))}
-      <group position={pin}>
-        <mesh>
-          <circleGeometry args={[0.06, 20]} />
-          <meshBasicMaterial color="#fff1c9" />
-        </mesh>
-        <mesh position={[0, 0, 0.004]}>
-          <circleGeometry args={[0.035, 20]} />
-          <meshBasicMaterial color="#b54431" />
-        </mesh>
-        <mesh position={[0, 0, 0.002]}>
-          <ringGeometry args={[0.086, 0.095, 24]} />
-          <meshBasicMaterial color="#fff1c9" transparent opacity={0.6} />
-        </mesh>
-      </group>
+      {pin && (
+        <group position={pin}>
+          <mesh>
+            <circleGeometry args={[0.06, 20]} />
+            <meshBasicMaterial color="#fff1c9" />
+          </mesh>
+          <mesh position={[0, 0, 0.004]}>
+            <circleGeometry args={[0.035, 20]} />
+            <meshBasicMaterial color="#b54431" />
+          </mesh>
+          <mesh position={[0, 0, 0.002]}>
+            <ringGeometry args={[0.086, 0.095, 24]} />
+            <meshBasicMaterial color="#fff1c9" transparent opacity={0.6} />
+          </mesh>
+        </group>
+      )}
     </group>
   );
 }
@@ -493,6 +495,11 @@ function SurpriseBlock({
 }
 
 type RoomProps = {
+  doorOpening: boolean;
+  onDoor: () => void;
+  onDoorOpened: () => void;
+  onDoorNear: (near: boolean) => void;
+  location: VisitorLocation | null;
   panel: StudyPanel | null;
   panelReady: boolean;
   studyLoaded: boolean;
@@ -516,6 +523,11 @@ type RoomProps = {
   onArtwork: (id: string) => void;
 };
 function Room({
+  doorOpening,
+  onDoor,
+  onDoorOpened,
+  onDoorNear,
+  location,
   panel,
   panelReady,
   studyLoaded,
@@ -565,7 +577,13 @@ function Room({
         color={night ? '#819ee0' : '#c5e9e6'}
       />
       <RoomShell />
-      <WoodenDoor />
+      <RoomDoor
+        lang={lang}
+        opening={doorOpening}
+        onOpen={onDoor}
+        onOpened={onDoorOpened}
+        onNear={onDoorNear}
+      />
       <Environment resolution={128}>
         <Lightformer
           intensity={1.4}
@@ -622,7 +640,7 @@ function Room({
         <GardenWindow night={night} reducedMotion={reducedMotion} />
       </Hotspot>
       <Hotspot label={studyLabel('map', lang)} onActivate={() => onOpen('map')}>
-        <WorldMap />
+        <WorldMap location={location} />
       </Hotspot>
       <Bookcase />
       <CollectionShelves />
@@ -700,6 +718,11 @@ function SceneReady({ onReady }: { onReady: () => void }) {
 }
 
 export function HomeExperience({ lang }: { lang: Language }) {
+  const visitor = useVisitorLocation();
+  const [doorStage, setDoorStage] = useState<'approach' | 'opening' | null>(
+    null,
+  );
+  const [doorNear, setDoorNear] = useState(false);
   const [lifted, setLifted] = useState(false),
     [dismissed, setDismissed] = useState(false),
     [ready, setReady] = useState(false),
@@ -744,6 +767,13 @@ export function HomeExperience({ lang }: { lang: Language }) {
     },
     [unlock],
   );
+  const openDoor = useCallback(() => {
+    unlock();
+    clearMovement();
+    setTip('');
+    setDoorStage('approach');
+  }, [unlock, clearMovement]);
+  const finishDoor = useCallback(() => setDismissed(true), []);
   const guideShown = useRef(false);
   const [onboarding, setOnboarding] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -763,6 +793,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
   useEffect(() => {
     if (
       !lifted ||
+      doorStage ||
       !ready ||
       dismissed ||
       guideShown.current ||
@@ -781,6 +812,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
     return () => clearTimeout(timer);
   }, [
     lifted,
+    doorStage,
     ready,
     dismissed,
     panel,
@@ -818,6 +850,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
     clearMovement();
   }, [clearMovement, unlock]);
   const onSettled = useCallback((id: string | null) => {
+    if (id === 'door') setDoorStage('opening');
     setTVReady(id === 'television');
     setPanelReady(!!id && id !== 'television' && id !== 'seat');
   }, []);
@@ -830,11 +863,12 @@ export function HomeExperience({ lang }: { lang: Language }) {
       ...(artwork ? [artwork] : []),
       ...(panel ? [STUDY_VIEWS[panel]] : []),
       ...(tv ? [TV_VIEW] : []),
+      ...(doorStage ? [DOOR_VIEW] : []),
     ],
-    [seated, artwork, panel, tv],
+    [seated, artwork, panel, tv, doorStage],
   );
   const interactive =
-    lifted && ready && !dismissed && !tv && !panel && !onboarding;
+    lifted && ready && !dismissed && !doorStage && !tv && !panel && !onboarding;
   useEffect(() => {
     const toolbar = toolbarRef.current;
     if (!toolbar) return;
@@ -879,14 +913,14 @@ export function HomeExperience({ lang }: { lang: Language }) {
     if (!dismissed) return;
     unlock();
     const timer = setTimeout(
-      () => window.location.assign(`/${lang}/blog/`),
+      () => window.location.assign(pageHref(lang, `blog`)),
       reducedMotion ? 0 : 250,
     );
     return () => clearTimeout(timer);
   }, [dismissed, reducedMotion, unlock, lang]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (dismissed || e.repeat) return;
+      if (dismissed || doorStage || e.repeat) return;
       const el = e.target as HTMLElement;
       if (e.key === 'Escape') {
         if (document.pointerLockElement) {
@@ -927,6 +961,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
     return () => removeEventListener('keydown', handler);
   }, [
     dismissed,
+    doorStage,
     tv,
     game,
     panel,
@@ -969,12 +1004,15 @@ export function HomeExperience({ lang }: { lang: Language }) {
       className={[
         'home-experience',
         lifted ? 'lifted' : '',
+        doorStage ? 'is-opening-door' : '',
         dismissed ? 'entered' : '',
         night ? 'is-night' : '',
         artwork ? 'is-inspecting' : '',
         tv ? 'is-watching-tv' : '',
         panel && panel !== 'tactics' && !tv ? 'is-using-study' : '',
-        panel || tv || artwork || onboarding ? 'is-viewing-object' : '',
+        panel || tv || artwork || onboarding || doorStage
+          ? 'is-viewing-object'
+          : '',
         seated ? 'is-seated' : '',
         tip ? 'has-hotspot' : '',
       ].join(' ')}
@@ -1028,6 +1066,11 @@ export function HomeExperience({ lang }: { lang: Language }) {
                 <Suspense fallback={null}>
                   <PixelMaterials>
                     <Room
+                      doorOpening={doorStage === 'opening'}
+                      onDoor={openDoor}
+                      onDoorOpened={finishDoor}
+                      onDoorNear={setDoorNear}
+                      location={visitor.location}
                       panel={panel}
                       panelReady={panelReady}
                       studyLoaded={studyLoaded}
@@ -1088,7 +1131,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
           {lang === 'en' ? '中文' : 'EN'}
         </a>
       )}
-      {ready && !tv && !panel && (
+      {ready && !tv && !panel && !doorStage && (
         <>
           <div
             ref={toolbarRef}
@@ -1240,9 +1283,18 @@ export function HomeExperience({ lang }: { lang: Language }) {
         >
           <div>
             <p>
-              {lang === 'zh'
-                ? '世界地图 · 标记位于中国大陆'
-                : 'World map · Mainland China marker'}
+              where you are
+              <small className="map-location-caption">
+                {visitor.loading
+                  ? lang === 'zh'
+                    ? '正在定位网络位置…'
+                    : 'Locating your network…'
+                  : visitor.location
+                    ? `${[visitor.location.city, visitor.location.country].filter(Boolean).join(', ')} · ${lang === 'zh' ? '网络大致位置' : 'Approximate network location'}`
+                    : lang === 'zh'
+                      ? '暂时无法获取网络位置'
+                      : 'Network location unavailable'}
+              </small>
             </p>
             <button aria-label={t.close} onClick={closePanel}>
               <X />
@@ -1279,8 +1331,18 @@ export function HomeExperience({ lang }: { lang: Language }) {
       {!panel && !tv && (
         <p className="room-hint">{tip || (lifted ? hint : t.click)}</p>
       )}
+      {doorNear && !doorStage && interactive && !artwork && (
+        <button className="room-door-prompt" onClick={openDoor}>
+          <kbd>E</kbd> {doorLabel(lang)} <span>↗</span>
+        </button>
+      )}
+      {doorStage && (
+        <output className="room-door-status">
+          {lang === 'zh' ? '正在开门 · Writing' : 'Opening the door · Writing'}
+        </output>
+      )}
       <button
-        disabled={onboarding || tv || !!panel}
+        disabled={onboarding || tv || !!panel || !!doorStage}
         className="enter-reading show"
         onClick={() => setDismissed(true)}
       >

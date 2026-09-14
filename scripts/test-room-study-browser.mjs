@@ -240,7 +240,7 @@ try {
     await dialog.waitFor({ state: 'visible' });
     await input.fill('about');
     await input.press('Enter');
-    await dialog.getByText('Shanghai · UTC+8').waitFor();
+    await dialog.getByText('China · UTC+8').waitFor();
     await dialog.getByRole('button', { name: /Terminal/ }).click();
     await input.fill('lang');
     await input.press('Enter');
@@ -364,7 +364,7 @@ try {
         Math.abs(restored.z - home.z) < 0.01,
       'original room position restored',
     );
-    assert.equal(new URL(page.url()).pathname, '/zh');
+    assert.equal(new URL(page.url()).pathname, '/zh/');
     results.push(
       size.name +
         ' passed: input, reading, computer/terminal state, nested TV, local suggestions, magnets, seat restore',

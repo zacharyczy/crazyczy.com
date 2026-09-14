@@ -45,6 +45,11 @@ export const roomGuide = (lang: Language) =>
           text: '点战术板，拖动红蓝号码磁粒布置阵型，碰到其他磁粒时会沿边缘滑动，可随时复位。足球自动滚动，拖动后松手继续，碰到磁粒会反弹；进球显示 GOAL 奖励，再回到中圈。',
         },
         {
+          id: 'door',
+          title: '开门进入网站',
+          text: '走到木门前，点击提示或瞄准门后按 E。开门进入 Writing，与回车相同。',
+        },
+        {
           id: 'suggestions',
           title: '留下建议',
           text: '右侧访客簿可以留言与投票。每位访客每天最多留下两条建议。',
@@ -87,6 +92,11 @@ export const roomGuide = (lang: Language) =>
           text: 'Open the tactics board, drag the numbered magnets around each other; they slide along contact edges without overlapping. Reset whenever you like. The ball rolls, bounces off magnets, and resumes after you drag and release it. Score a goal for a small reward, then the ball returns to the centre.',
         },
         {
+          id: 'door',
+          title: 'Through the door',
+          text: 'Walk up to the wooden door. Click the prompt, or aim and press E, to open it and enter Writing. Enter is the shortcut.',
+        },
+        {
           id: 'suggestions',
           title: 'Leave a suggestion',
           text: 'Open the visitor book beside these notes to leave a note or vote. Up to two notes per visitor per day.',
@@ -101,3 +111,6 @@ export const studyLabel = (id: StudyPanel, lang: Language) =>
     guide: lang === 'zh' ? '房间操作' : 'Room controls',
     suggestions: lang === 'zh' ? '建议访客簿' : 'Suggestions',
   })[id];
+
+export const doorLabel = (lang: Language) =>
+  lang === 'zh' ? '开门进入写作' : 'Open door to Writing';

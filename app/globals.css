@@ -614,3 +614,13 @@
   .tv-game .flight-controls button { min-height:128px; font-size:48px; }
 }
 @media(prefers-reduced-motion:reduce) { .tv-power-surface { animation:none; transition:none; } }
+
+.map-location-caption { display: block; margin-top: 5px; font-size: 11px; font-weight: normal; opacity: .75; }
+.room-door-prompt, .room-door-status { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 35; border: 1px solid #b5a180; background: #f7eddbef; color: #493b2b; padding: 14px 20px; border-radius: 5px; font: 13px monospace; box-shadow: 0 4px 22px #30251e30; }
+.room-door-prompt { cursor: pointer; white-space: nowrap; }
+.room-door-prompt kbd { border: 1px solid #b5a180; padding: 3px 6px; margin-right: 7px; }
+.room-door-status { pointer-events: none; }
+
+.home-experience.is-opening-door { transition: opacity .25s ease, transform .25s ease; }
+.home-experience.is-opening-door.entered { transform: scale(1.025); opacity: 0; visibility: visible; }
+.is-opening-door .room-hint, .is-opening-door .room-language, .is-opening-door .enter-reading { display: none; }
