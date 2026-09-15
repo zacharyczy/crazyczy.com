@@ -46,8 +46,12 @@ try {
     );
     await page.screenshot({ path: `${out}/${size.name}-hands.png` });
     if (touch) {
-      const a = await page.locator('.room-jump-touch').boundingBox(), b = await page.locator('.enter-reading').boundingBox();
-      assert.ok(a.y + a.height < b.y || b.y + b.height < a.y, 'jump and Writing buttons do not overlap');
+      const a = await page.locator('.room-jump-touch').boundingBox(),
+        b = await page.locator('.enter-reading').boundingBox();
+      assert.ok(
+        a.y + a.height < b.y || b.y + b.height < a.y,
+        'jump and Writing buttons do not overlap',
+      );
     }
     await canvas.focus();
     await page.keyboard.down('KeyW');
@@ -94,6 +98,10 @@ try {
       0,
       'dragging does not swing hand',
     );
+    assert.ok(
+      (await pose()).pitch >= -1.221,
+      'neck stops before looking through the body',
+    );
     await page.screenshot({ path: `${out}/${size.name}-feet.png` });
     await page.mouse.click(size.width * 0.55, size.height * 0.56);
     await page.waitForFunction(
@@ -108,6 +116,7 @@ try {
       .click();
     await page.waitForTimeout(750);
     assert.ok(Math.abs((await pose()).y - 1.92) < 0.01);
+    await page.screenshot({ path: `${out}/${size.name}-crouched-body.png` });
     await page.getByRole('button', { name: 'World map', exact: true }).click();
     await page.waitForTimeout(1200);
     assert.equal((await pose()).avatar.visible, false);

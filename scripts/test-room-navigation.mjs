@@ -37,6 +37,8 @@ assert.ok(
 );
 assert.ok(mouse.yaw < 0 && mouse.pitch < 0, 'mouse follows physical movement');
 assert.equal(turnAngles(0, 0, 0, 10000, true).pitch, 1.43);
+assert.equal(turnAngles(0, 0, 0, -10000, true).pitch, -1.22);
+assert.equal(turnAngles(0, 0, 0, 10000, false).pitch, -1.22);
 console.log(
   'PASS: two eye heights, every furniture collider, wall bounds, normal mouse and inverse drag, pitch limits. Browser tests cover view stack and pointer lock.',
 );

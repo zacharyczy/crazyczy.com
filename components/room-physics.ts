@@ -34,6 +34,6 @@ export function turnAngles(
   const sign = drag ? 1 : -1;
   return {
     yaw: yaw + dx * 0.0025 * sign,
-    pitch: Math.max(-1.43, Math.min(1.43, pitch + dy * 0.0025 * sign)),
+    pitch: Math.max(-1.22, Math.min(1.43, pitch + dy * 0.0025 * sign)),
   };
 }
