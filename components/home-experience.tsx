@@ -719,6 +719,7 @@ function SceneReady({ onReady }: { onReady: () => void }) {
 
 export function HomeExperience({ lang }: { lang: Language }) {
   const visitor = useVisitorLocation();
+  const [jumpId, setJumpId] = useState(0);
   const [doorStage, setDoorStage] = useState<'approach' | 'opening' | null>(
     null,
   );
@@ -1048,6 +1049,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
                 value={{ enabled: interactive, reducedMotion, setTip }}
               >
                 <RoomNavigation
+                  jumpId={jumpId}
                   lifted={lifted && ready}
                   mode={mode}
                   crouching={crouching}
@@ -1173,6 +1175,14 @@ export function HomeExperience({ lang }: { lang: Language }) {
               onClick={() => setCrouching((v) => !v)}
             >
               <PersonStanding />
+            </button>
+            <button
+              disabled={views.length > 0 || onboarding}
+              aria-label={lang === 'zh' ? '跳跃（空格）' : 'Jump (Space)'}
+              title={lang === 'zh' ? '空格跳跃' : 'Space to jump'}
+              onClick={() => setJumpId((v) => v + 1)}
+            >
+              <ArrowUp />
             </button>
             <button
               aria-label={night ? t.day : t.night}
@@ -1330,6 +1340,16 @@ export function HomeExperience({ lang }: { lang: Language }) {
       )}
       {!panel && !tv && (
         <p className="room-hint">{tip || (lifted ? hint : t.click)}</p>
+      )}
+      {interactive && !artwork && (
+        <button
+          className="room-jump-touch"
+          aria-label={lang === 'zh' ? '跳跃' : 'Jump'}
+          onClick={() => setJumpId((v) => v + 1)}
+        >
+          <ArrowUp />
+          <span>{lang === 'zh' ? '跳跃' : 'Jump'}</span>
+        </button>
       )}
       {doorNear && !doorStage && interactive && !artwork && (
         <button className="room-door-prompt" onClick={openDoor}>

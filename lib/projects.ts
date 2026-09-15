@@ -5,6 +5,16 @@ export const projects = {
     {
       year: '2026',
       status: '新项目',
+      title: 'no-pink-elephant',
+      description:
+        '让模型在代码、文章、注释及回复中自然遵守用户负向要求，减少不必要的约束确认和禁止内容复述。',
+      stack: ['Agent Skill', 'Prompting', 'Writing'],
+      repository: 'https://github.com/zacharyczy/no-pink-elephant',
+      articleSlug: 'no-pink-elephant',
+    },
+    {
+      year: '2026',
+      status: '新项目',
       title: 'ppt-to-chinese',
       description:
         '将英文 PowerPoint 整理成可阅读中文 Markdown 的 Agent Skill，保留页序、备注并提供结构检查。',
@@ -42,6 +52,16 @@ export const projects = {
     },
   ],
   en: [
+    {
+      year: '2026',
+      status: 'New',
+      title: 'no-pink-elephant',
+      description:
+        'An agent skill for quietly honoring negative user constraints across code, prose, comments, and replies.',
+      stack: ['Agent Skill', 'Prompting', 'Writing'],
+      repository: 'https://github.com/zacharyczy/no-pink-elephant',
+      articleSlug: 'no-pink-elephant',
+    },
     {
       year: '2026',
       status: 'New',

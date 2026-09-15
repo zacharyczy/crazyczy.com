@@ -12,12 +12,12 @@ export const roomGuide = (lang: Language) =>
         {
           id: 'move',
           title: '走进房间',
-          text: 'WASD / 方向键行走 · C 站立 / 蹲下。鼠标转头，瞄点对准后点击或按 E。Esc 释放鼠标。',
+          text: 'WASD / 方向键行走 · C 站立 / 蹲下 · 空格跳跃。点击会挥手。鼠标转头，瞄点对准后点击或按 E。Esc 释放鼠标。',
         },
         {
           id: 'drag',
           title: '拖动与触屏',
-          text: '向右拖＝向左看；向下拖＝抬头。手机用左下摇杆移动。滚轮 / 双指靠近或后退，到墙面和家具前停下。',
+          text: '向右拖＝向左看；向下拖＝抬头。手机用左下摇杆移动、右下按钮跳跃。滚轮 / 双指靠近或后退，到墙面和家具前停下。',
         },
         {
           id: 'writing',
@@ -59,12 +59,12 @@ export const roomGuide = (lang: Language) =>
         {
           id: 'move',
           title: 'Make yourself at home',
-          text: 'WASD / arrows walk. C stands / crouches. Move the mouse to look; aim and click or press E. Esc releases the cursor.',
+          text: 'WASD / arrows walk. C stands / crouches. Space jumps; click to swing your hand. Move the mouse to look; aim and click or press E. Esc releases the cursor.',
         },
         {
           id: 'drag',
           title: 'Drag & touch',
-          text: 'Drag right to look left, down to look up. Mobile: left joystick walks. Scroll / pinch moves forward or back, stopping at walls and furniture.',
+          text: 'Drag right to look left, down to look up. Mobile: left joystick walks; the bottom-right button jumps. Scroll / pinch moves forward or back, stopping at walls and furniture.',
         },
         {
           id: 'writing',

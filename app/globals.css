@@ -624,3 +624,11 @@
 .home-experience.is-opening-door { transition: opacity .25s ease, transform .25s ease; }
 .home-experience.is-opening-door.entered { transform: scale(1.025); opacity: 0; visibility: visible; }
 .is-opening-door .room-hint, .is-opening-door .room-language, .is-opening-door .enter-reading { display: none; }
+
+.room-jump-touch { display: none; }
+@media (pointer: coarse) {
+ .room-jump-touch { position: absolute; display: flex; align-items: center; flex-direction: column; justify-content: center; right: max(22px, env(safe-area-inset-right)); bottom: 165px; width: 62px; height: 62px; border-radius: 50%; border: 1px solid #d5c89c; background: #595c43c9; color: #fff6db; z-index: 25; touch-action: manipulation; font: 11px monospace; }
+ .room-jump-touch svg { width: 22px; height: 22px; }
+}
+
+@media (pointer: coarse) and (max-height: 500px) { .room-jump-touch { bottom: 104px; } }

@@ -1,5 +1,7 @@
 # crazyczy.com
 
+📖 **中文维护入口：[网站维护与发布指南](./指南/网站维护指南.md)** — 文章、项目、房间及其他页面在哪改，以及如何推送上线。
+
 The source for [crazyczy.com](https://crazyczy.com), Zachary Cheng's English-first personal website with Chinese support.
 
 ## What is here

@@ -3,6 +3,13 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { RoomAvatar } from './room-avatar';
+import {
+  createLocomotion,
+  stepLocomotion,
+  beginJump,
+  stopLocomotion,
+} from './room-locomotion';
 import { STANDING, CROUCHING, walkStep, turnAngles } from './room-physics';
 export type RoomView = {
   id?: string;
@@ -23,6 +30,7 @@ type Pose = {
 };
 type Props = {
   lifted: boolean;
+  jumpId?: number;
   mode: ViewMode;
   resetId: number;
   paused: boolean;
@@ -42,6 +50,7 @@ const MIN = new THREE.Vector3(-6.12, 0.24, -6.1),
   MAX = new THREE.Vector3(6.12, 6.1, 6.3);
 export function RoomNavigation({
   lifted,
+  jumpId = 0,
   mode,
   resetId,
   paused,
@@ -57,6 +66,14 @@ export function RoomNavigation({
   onTip,
 }: Props) {
   const { camera, gl, scene, size } = useThree();
+  const motion = useRef({
+    walking: createLocomotion(),
+    visible: false,
+    swing: 0,
+    eye: STANDING,
+    cameraOffset: 0,
+  });
+  const priorJump = useRef(jumpId);
   const keys = useRef(new Set<string>()),
     saved = useRef<Pose[]>([]),
     previous = useRef<string[]>([]);
@@ -67,6 +84,17 @@ export function RoomNavigation({
       intro?: boolean;
     } | null>(null),
     started = useRef(false);
+  useEffect(() => {
+    if (
+      jumpId !== priorJump.current &&
+      lifted &&
+      !paused &&
+      !inputLocked &&
+      !tween.current
+    )
+      beginJump(motion.current.walking);
+    priorJump.current = jumpId;
+  }, [jumpId, lifted, paused, inputLocked]);
   const action = useRef<(() => void) | undefined>(undefined),
     lastTip = useRef('');
   const scratch = useMemo(
@@ -82,7 +110,9 @@ export function RoomNavigation({
   );
   const current = useCallback(
     () => ({
-      position: camera.position.clone(),
+      position: camera.position
+        .clone()
+        .sub(new THREE.Vector3(0, motion.current.cameraOffset, 0)),
       quaternion: camera.quaternion.clone(),
       fov: (camera as THREE.PerspectiveCamera).fov,
     }),
@@ -90,6 +120,9 @@ export function RoomNavigation({
   );
   useEffect(() => {
     if (!lifted) return;
+    stopLocomotion(motion.current.walking);
+    motion.current.eye = STANDING;
+    motion.current.cameraOffset = 0;
     scratch.dummy.position.copy(HOME);
     scratch.dummy.lookAt(-0.25, 2.9, -3.8);
     const destination = {
@@ -181,6 +214,7 @@ export function RoomNavigation({
       keys.current.clear();
       clearMovement();
       pointers.clear();
+      stopLocomotion(motion.current.walking);
     };
     const pointers = new Map<
       number,
@@ -233,12 +267,18 @@ export function RoomNavigation({
         e.preventDefault();
         keys.current.add(e.code);
       }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (!e.repeat) beginJump(motion.current.walking);
+      }
       if (
         e.code === 'KeyE' &&
         !e.repeat &&
         document.pointerLockElement === canvas
-      )
+      ) {
+        motion.current.swing = reducedMotion ? 0.14 : 0.34;
         action.current?.();
+      }
     };
     const up = (e: KeyboardEvent) => keys.current.delete(e.code);
     const lock = () => {
@@ -255,6 +295,7 @@ export function RoomNavigation({
       if (blocked() || e.button !== 0) return;
       canvas.focus({ preventScroll: true });
       if (mode === 'pointer' && e.pointerType === 'mouse') {
+        motion.current.swing = reducedMotion ? 0.14 : 0.34;
         if (document.pointerLockElement === canvas) action.current?.();
         else lock();
         return;
@@ -295,6 +336,15 @@ export function RoomNavigation({
       } else rotate(dx, dy, true);
     };
     const end = (e: PointerEvent) => {
+      const p = pointers.get(e.pointerId);
+      if (
+        e.type === 'pointerup' &&
+        p &&
+        pointers.size === 1 &&
+        !blocked() &&
+        Math.hypot(p.x - p.startX, p.y - p.startY) <= 5
+      )
+        motion.current.swing = reducedMotion ? 0.14 : 0.34;
       pointers.delete(e.pointerId);
       pinch = 0;
     };
@@ -310,6 +360,7 @@ export function RoomNavigation({
       else clear();
     };
     const blur = () => {
+      motion.current.swing = 0;
       clear();
       if (document.pointerLockElement === canvas) document.exitPointerLock();
     };
@@ -325,7 +376,10 @@ export function RoomNavigation({
     canvas.addEventListener('pointercancel', end);
     canvas.addEventListener('lostpointercapture', end);
     canvas.addEventListener('wheel', wheel, { passive: false });
-    if (paused || inputLocked || mode === 'drag') blur();
+    if (paused || inputLocked || mode === 'drag') {
+      clear();
+      if (document.pointerLockElement === canvas) document.exitPointerLock();
+    }
     return () => {
       clear();
       window.removeEventListener('keydown', down);
@@ -352,11 +406,16 @@ export function RoomNavigation({
     onLockChange,
     onLockFailure,
     scratch,
+    reducedMotion,
   ]);
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.04);
+    motion.current.swing = Math.max(0, motion.current.swing - dt);
+    motion.current.visible =
+      lifted && started.current && !paused && !inputLocked && !tween.current;
     if (!lifted || !started.current || paused) return;
     if (tween.current) {
+      motion.current.cameraOffset = 0;
       const t = tween.current;
       t.t = reducedMotion ? 1 : Math.min(1, t.t + dt / (t.intro ? 1.18 : 0.8));
       const e = t.intro ? 1 - Math.pow(1 - t.t, 3) : t.t * t.t * (3 - 2 * t.t);
@@ -382,18 +441,6 @@ export function RoomNavigation({
       return;
     }
     if (!inputLocked) {
-      camera.position.setY(
-        reducedMotion
-          ? crouching
-            ? CROUCHING
-            : STANDING
-          : THREE.MathUtils.damp(
-              camera.position.y,
-              crouching ? CROUCHING : STANDING,
-              14,
-              dt,
-            ),
-      );
       const k = keys.current,
         forward =
           Number(k.has('KeyW') || k.has('ArrowUp')) -
@@ -412,13 +459,27 @@ export function RoomNavigation({
         .addScaledVector(scratch.right, right);
       if (scratch.direction.lengthSq() > 1) scratch.direction.normalize();
       const speed = k.has('ShiftLeft') || k.has('ShiftRight') ? 4.2 : 2.4;
-      const p = walkStep(
+      const m = motion.current,
+        state = m.walking;
+      const p = stepLocomotion(
+        state,
         camera.position.x,
         camera.position.z,
-        scratch.direction.x * dt * speed,
-        scratch.direction.z * dt * speed,
+        scratch.direction.x * speed,
+        scratch.direction.z * speed,
+        dt,
       );
-      camera.position.set(p.x, camera.position.y, p.z);
+      m.eye = reducedMotion
+        ? crouching
+          ? CROUCHING
+          : STANDING
+        : THREE.MathUtils.damp(m.eye, crouching ? CROUCHING : STANDING, 14, dt);
+      const bob = reducedMotion
+        ? 0
+        : Math.sin(state.phase * 2) * 0.024 * state.gait -
+          state.landing * 0.035;
+      m.cameraOffset = state.height + bob;
+      camera.position.set(p.x, m.eye + m.cameraOffset, p.z);
     }
     if (document.pointerLockElement === gl.domElement && !inputLocked) {
       scratch.ray.setFromCamera(scratch.center, camera);
@@ -455,10 +516,18 @@ export function RoomNavigation({
             .x,
           fov: c.fov,
           view: views.at(-1)?.id ?? null,
+          avatar: {
+            visible: motion.current.visible,
+            jump: motion.current.walking.height,
+            vy: motion.current.walking.vy,
+            gait: motion.current.walking.gait,
+            phase: motion.current.walking.phase,
+            swing: motion.current.swing,
+          },
           calls: gl.info.render.calls,
           triangles: gl.info.render.triangles,
         }),
       });
-  });
-  return null;
+  }, -1);
+  return <RoomAvatar motion={motion} reducedMotion={reducedMotion} />;
 }

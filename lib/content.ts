@@ -1,3 +1,5 @@
+import enElephant from '@/content/posts/en/no-pink-elephant.md?raw';
+import zhElephant from '@/content/posts/zh/no-pink-elephant.md?raw';
 import enPpt from '@/content/posts/en/ppt-to-chinese.md?raw';
 import zhPpt from '@/content/posts/zh/ppt-to-chinese.md?raw';
 import enHello from '@/content/posts/en/hello-world.md?raw';
@@ -71,6 +73,8 @@ function parsePost(slug: string, raw: string): Post {
 }
 
 const allPosts = [
+  parsePost('no-pink-elephant', enElephant),
+  parsePost('no-pink-elephant', zhElephant),
   parsePost('ppt-to-chinese', enPpt),
   parsePost('ppt-to-chinese', zhPpt),
   parsePost('hello-world', zhHello),
