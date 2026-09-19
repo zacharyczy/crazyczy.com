@@ -21,6 +21,8 @@ import {
   Images,
   X,
   HelpCircle,
+  PanelTopOpen,
+  PanelTopClose,
   ArrowUp,
   ArrowDown,
   ArrowLeft,
@@ -87,7 +89,7 @@ const WORDS = {
     click: 'Step into my room',
     explore: 'Drag right to look left · Drag down to look up',
     flyHint: 'WASD to walk · C to crouch · E to interact',
-    enter: 'Enter Writing',
+    enter: 'Enter Web',
     orbit: 'Orbit',
     fly: 'Roam',
     reset: 'Reset view',
@@ -113,7 +115,7 @@ const WORDS = {
     click: '进来坐坐，抬头看看',
     explore: '向右拖向左看 · 向下拖抬头',
     flyHint: 'WASD 行走 · C 蹲下 · E 交互',
-    enter: '进入 Writing',
+    enter: '进入 Web',
     orbit: '环绕',
     fly: '漫游',
     reset: '回到初始视角',
@@ -778,6 +780,17 @@ export function HomeExperience({ lang }: { lang: Language }) {
   const guideShown = useRef(false);
   const [onboarding, setOnboarding] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const guideButtonRef = useRef<HTMLButtonElement>(null);
+  const invitationRef = useRef<HTMLDivElement>(null);
+  const [dockExpanded, setDockExpanded] = useState(true);
+  const [invitation, setInvitation] = useState(false);
+  const openManual = useCallback(() => {
+    guideShown.current = true;
+    setInvitation(false);
+    unlock();
+    clearMovement();
+    setOnboarding(true);
+  }, [unlock, clearMovement]);
   const openPanel = useCallback(
     (next: StudyPanel) => {
       if (next === 'guide') guideShown.current = true;
@@ -792,38 +805,10 @@ export function HomeExperience({ lang }: { lang: Language }) {
     [clearMovement, unlock],
   );
   useEffect(() => {
-    if (
-      !lifted ||
-      doorStage ||
-      !ready ||
-      dismissed ||
-      guideShown.current ||
-      panel ||
-      tv ||
-      artId ||
-      seated
-    )
-      return;
-    const timer = setTimeout(() => {
-      guideShown.current = true;
-      unlock();
-      clearMovement();
-      setOnboarding(true);
-    }, 3000);
+    if (!invitation) return;
+    const timer = setTimeout(() => setInvitation(false), 16000);
     return () => clearTimeout(timer);
-  }, [
-    lifted,
-    doorStage,
-    ready,
-    dismissed,
-    panel,
-    tv,
-    artId,
-    seated,
-    openPanel,
-    unlock,
-    clearMovement,
-  ]);
+  }, [invitation]);
   const closePanel = useCallback(() => {
     setPanel(null);
     setPanelReady(false);
@@ -851,6 +836,10 @@ export function HomeExperience({ lang }: { lang: Language }) {
     clearMovement();
   }, [clearMovement, unlock]);
   const onSettled = useCallback((id: string | null) => {
+    if (id === null && !guideShown.current) {
+      guideShown.current = true;
+      setInvitation(true);
+    }
     if (id === 'door') setDoorStage('opening');
     setTVReady(id === 'television');
     setPanelReady(!!id && id !== 'television' && id !== 'seat');
@@ -870,27 +859,49 @@ export function HomeExperience({ lang }: { lang: Language }) {
   );
   const interactive =
     lifted && ready && !dismissed && !doorStage && !tv && !panel && !onboarding;
+  const showInvitation =
+    invitation && lifted && !views.length && !onboarding && !dismissed;
   useEffect(() => {
     const toolbar = toolbarRef.current;
     if (!toolbar) return;
-    const update = () =>
-      toolbar
-        .closest<HTMLElement>('.home-experience')
-        ?.style.setProperty(
-          '--welcome-top',
-          `${toolbar.offsetTop + toolbar.offsetHeight + 16}px`,
+    const update = () => {
+      const root = toolbar.closest<HTMLElement>('.home-experience');
+      if (!root) return;
+      const bottom = toolbar.offsetTop + toolbar.offsetHeight;
+      root.style.setProperty('--dock-bottom', `${bottom}px`);
+      const invitation = invitationRef.current;
+      const guide = guideButtonRef.current;
+      if (invitation && guide) {
+        const g = guide.getBoundingClientRect(),
+          i = invitation.getBoundingClientRect();
+        invitation.style.setProperty(
+          '--guide-arrow-x',
+          `${g.left + g.width / 2 - i.left}px`,
         );
+      }
+      root.style.setProperty(
+        '--welcome-top',
+        `${bottom + (invitation ? invitation.offsetHeight + 30 : 16)}px`,
+      );
+    };
     const observer = new ResizeObserver(update);
     observer.observe(toolbar);
+    if (invitationRef.current) observer.observe(invitationRef.current);
+    window.addEventListener('resize', update);
     update();
-    return () => observer.disconnect();
-  }, [lifted, ready, tv, panel, onboarding]);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [lifted, ready, tv, panel, onboarding, showInvitation, dockExpanded]);
   useEffect(() => {
     const q = matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => setReducedMotion(q.matches);
     const frame = requestAnimationFrame(() => {
       update();
       if (matchMedia('(pointer: coarse)').matches) setMode('drag');
+      if (matchMedia('(pointer: coarse), (max-width: 700px)').matches)
+        setDockExpanded(false);
     });
     q.addEventListener('change', update);
     return () => {
@@ -1144,108 +1155,159 @@ export function HomeExperience({ lang }: { lang: Language }) {
             role="toolbar"
             aria-label={t.help}
           >
-            <div className="room-view-toggle">
-              <button
-                aria-pressed={mode === 'pointer'}
-                onClick={() => {
-                  setMode('pointer');
-                  setTip('');
-                }}
-              >
-                {lang === 'zh' ? '鼠标' : 'Mouse'}
-              </button>
-              <button
-                aria-pressed={mode === 'drag'}
-                onClick={() => {
-                  setMode('drag');
-                  unlock();
-                  setTip('');
-                }}
-              >
-                {lang === 'zh' ? '拖动' : 'Drag'}
-              </button>
-            </div>
-            <button aria-label={t.reset} title={t.reset} onClick={reset}>
-              <RotateCcw />
+            <button
+              className="room-dock-toggle"
+              aria-label={
+                lang === 'zh'
+                  ? dockExpanded
+                    ? '收起操作栏'
+                    : '展开操作栏'
+                  : dockExpanded
+                    ? 'Collapse dock'
+                    : 'Expand dock'
+              }
+              aria-expanded={dockExpanded}
+              aria-controls="room-dock-actions"
+              onClick={() => setDockExpanded((v) => !v)}
+            >
+              {dockExpanded ? <PanelTopClose /> : <PanelTopOpen />}
             </button>
             <button
-              disabled={views.length > 0}
-              aria-label={lang === 'zh' ? '站立 / 蹲下' : 'Stand / crouch'}
-              aria-pressed={crouching}
-              onClick={() => setCrouching((v) => !v)}
+              ref={guideButtonRef}
+              className={`room-manual-button${showInvitation ? ' is-highlighted' : ''}`}
+              aria-label={t.help}
+              title={lang === 'zh' ? '阅读房间手册' : 'Read the room manual'}
+              onClick={openManual}
             >
-              <PersonStanding />
-            </button>
-            <button
-              disabled={views.length > 0 || onboarding}
-              aria-label={lang === 'zh' ? '跳跃（空格）' : 'Jump (Space)'}
-              title={lang === 'zh' ? '空格跳跃' : 'Space to jump'}
-              onClick={() => setJumpId((v) => v + 1)}
-            >
-              <ArrowUp />
-            </button>
-            <button
-              aria-label={night ? t.day : t.night}
-              onClick={() => setNight((v) => !v)}
-            >
-              {night ? <Moon /> : <Sun />}
-            </button>
-            <button aria-label={t.lamp} onClick={() => setLampOn((v) => !v)}>
-              <Lamp />
-            </button>
-            <button
-              aria-label={t.artwork}
-              onClick={() => openArtwork('tagore')}
-            >
-              <Images />
-            </button>
-            <button
-              aria-label={studyLabel('map', lang)}
-              onClick={() => openPanel('map')}
-            >
-              <MapIcon />
-            </button>
-            <button
-              aria-label={studyLabel('writing', lang)}
-              onClick={() => openPanel('writing')}
-            >
-              <BookOpen />
-            </button>
-            <button
-              aria-label={studyLabel('computer', lang)}
-              onClick={() => openPanel('computer')}
-            >
-              <Monitor />
-            </button>
-            <button
-              aria-label={studyLabel('tactics', lang)}
-              onClick={() => openPanel('tactics')}
-            >
-              ⚽
-            </button>
-            <button
-              aria-label={lang === 'zh' ? '打开电视' : 'Watch TV'}
-              onClick={openTV}
-            >
-              <Tv />
-            </button>
-            <button
-              aria-label={lang === 'zh' ? '沙发坐姿' : 'Sofa view'}
-              aria-pressed={seated}
-              onClick={toggleSeat}
-            >
-              <Armchair />
-            </button>
-            <button
-              aria-label={studyLabel('suggestions', lang)}
-              onClick={() => openPanel('suggestions')}
-            >
-              <NotebookPen />
-            </button>
-            <button aria-label={t.help} onClick={() => openPanel('guide')}>
               <HelpCircle />
             </button>
+            <div
+              id="room-dock-actions"
+              className="room-dock-actions"
+              hidden={!dockExpanded}
+            >
+              <div className="room-view-toggle">
+                <button
+                  aria-pressed={mode === 'pointer'}
+                  onClick={() => {
+                    setMode('pointer');
+                    setTip('');
+                  }}
+                >
+                  {lang === 'zh' ? '鼠标' : 'Mouse'}
+                </button>
+                <button
+                  aria-pressed={mode === 'drag'}
+                  onClick={() => {
+                    setMode('drag');
+                    unlock();
+                    setTip('');
+                  }}
+                >
+                  {lang === 'zh' ? '拖动' : 'Drag'}
+                </button>
+              </div>
+              <button aria-label={t.reset} title={t.reset} onClick={reset}>
+                <RotateCcw />
+              </button>
+              <button
+                disabled={views.length > 0}
+                aria-label={lang === 'zh' ? '站立 / 蹲下' : 'Stand / crouch'}
+                aria-pressed={crouching}
+                onClick={() => setCrouching((v) => !v)}
+              >
+                <PersonStanding />
+              </button>
+              <button
+                disabled={views.length > 0 || onboarding}
+                aria-label={lang === 'zh' ? '跳跃（空格）' : 'Jump (Space)'}
+                title={lang === 'zh' ? '空格跳跃' : 'Space to jump'}
+                onClick={() => setJumpId((v) => v + 1)}
+              >
+                <ArrowUp />
+              </button>
+              <button
+                aria-label={night ? t.day : t.night}
+                onClick={() => setNight((v) => !v)}
+              >
+                {night ? <Moon /> : <Sun />}
+              </button>
+              <button aria-label={t.lamp} onClick={() => setLampOn((v) => !v)}>
+                <Lamp />
+              </button>
+              <button
+                aria-label={t.artwork}
+                onClick={() => openArtwork('tagore')}
+              >
+                <Images />
+              </button>
+              <button
+                aria-label={studyLabel('map', lang)}
+                onClick={() => openPanel('map')}
+              >
+                <MapIcon />
+              </button>
+              <button
+                aria-label={studyLabel('writing', lang)}
+                onClick={() => openPanel('writing')}
+              >
+                <BookOpen />
+              </button>
+              <button
+                aria-label={studyLabel('computer', lang)}
+                onClick={() => openPanel('computer')}
+              >
+                <Monitor />
+              </button>
+              <button
+                aria-label={studyLabel('tactics', lang)}
+                onClick={() => openPanel('tactics')}
+              >
+                ⚽
+              </button>
+              <button
+                aria-label={lang === 'zh' ? '打开电视' : 'Watch TV'}
+                onClick={openTV}
+              >
+                <Tv />
+              </button>
+              <button
+                aria-label={lang === 'zh' ? '沙发坐姿' : 'Sofa view'}
+                aria-pressed={seated}
+                onClick={toggleSeat}
+              >
+                <Armchair />
+              </button>
+              <button
+                aria-label={studyLabel('suggestions', lang)}
+                onClick={() => openPanel('suggestions')}
+              >
+                <NotebookPen />
+              </button>
+            </div>
           </div>
+          {showInvitation && (
+            <div
+              ref={invitationRef}
+              className="room-invitation"
+              aria-live="polite"
+            >
+              <span className="room-guide-arrow" aria-hidden="true">
+                ↑
+              </span>
+              <p>
+                {lang === 'zh'
+                  ? '你可以自由探索，也可以阅读这里的手册。'
+                  : 'Feel free to explore, or read the room manual here.'}
+              </p>
+              <button
+                aria-label={lang === 'zh' ? '收起提示' : 'Dismiss tip'}
+                onClick={() => setInvitation(false)}
+              >
+                <X />
+              </button>
+            </div>
+          )}
           {lifted && !views.length && !onboarding && (
             <>
               <RoomJoystick movement={movement} lang={lang} />
@@ -1358,12 +1420,14 @@ export function HomeExperience({ lang }: { lang: Language }) {
       )}
       {doorStage && (
         <output className="room-door-status">
-          {lang === 'zh' ? '正在开门 · Writing' : 'Opening the door · Writing'}
+          {lang === 'zh' ? '正在开门 · Web' : 'Opening the door · Web'}
         </output>
       )}
       <button
         disabled={onboarding || tv || !!panel || !!doorStage}
         className="enter-reading show"
+        aria-label={t.enter}
+        title={lang === 'zh' ? '回车进入 Web' : 'Press Enter to enter Web'}
         onClick={() => setDismissed(true)}
       >
         <kbd>↵</kbd>

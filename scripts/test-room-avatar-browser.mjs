@@ -1,3 +1,4 @@
+import { dismissRoomGuide } from './room-browser-guide.mjs';
 import { chromium } from '../work/browser-tools/node_modules/playwright/index.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -34,8 +35,7 @@ try {
     await page
       .getByRole('button', { name: 'Step into my room', exact: true })
       .click();
-    await page.getByRole('dialog', { name: 'README', exact: true }).waitFor();
-    await page.keyboard.press('Escape');
+    await dismissRoomGuide(page);
     await page.getByRole('button', { name: 'Drag', exact: true }).click();
     const canvas = page.locator('.room-canvas canvas');
     const pose = () => canvas.getAttribute('data-pose').then(JSON.parse);

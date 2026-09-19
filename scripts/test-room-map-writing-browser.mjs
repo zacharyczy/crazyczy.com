@@ -1,3 +1,4 @@
+import { dismissRoomGuide } from './room-browser-guide.mjs';
 import { chromium } from '../work/browser-tools/node_modules/playwright/index.mjs';
 import * as THREE from 'three';
 import fs from 'node:fs';
@@ -38,7 +39,6 @@ try {
       0,
       'welcome route has no duplicate Home content',
     );
-    const start = Date.now();
     await page
       .getByRole('button', { name: 'Step into my room', exact: true })
       .click();
@@ -49,17 +49,7 @@ try {
     assert.equal(home.z, 6.05);
     assert.ok(home.yaw < 0.57 && home.yaw > 0.4, 'slightly right-facing');
     await page.screenshot({ path: `${out}/${size.name}-entry.png` });
-    await page.waitForTimeout(Math.max(0, 2200 - (Date.now() - start)));
-    if (Date.now() - start < 2850)
-      assert.equal(
-        await page.locator('.room-onboarding').count(),
-        0,
-        'guide no longer opens after two seconds',
-      );
-    await page.getByRole('dialog', { name: 'README', exact: true }).waitFor();
-    assert.ok(Date.now() - start >= 2900);
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await dismissRoomGuide(page);
     await page.getByRole('button', { name: 'Drag', exact: true }).click();
     // Aim at the physical map and activate it with mouse / touch.
     const cam = new THREE.PerspectiveCamera(
@@ -178,7 +168,7 @@ try {
       0,
     );
     results.push(
-      `${size.name}: rearward/rightward view, three-second README, map focus and restoration, tangent magnet slide, Enter to Writing, Home to welcome, China profile`,
+      `${size.name}: rearward/rightward view, non-modal invitation and manual, map focus and restoration, tangent magnet slide, Enter to Writing, Home to welcome, China profile`,
     );
     console.log(results.at(-1));
     await ctx.close();

@@ -47,7 +47,7 @@ export const roomGuide = (lang: Language) =>
         {
           id: 'door',
           title: '开门进入网站',
-          text: '走到木门前，点击提示或瞄准门后按 E。开门进入 Writing，与回车相同。',
+          text: '走到木门前，点击提示或瞄准门后按 E。开门进入 Web，与回车相同；首先显示写作页。',
         },
         {
           id: 'suggestions',
@@ -94,7 +94,7 @@ export const roomGuide = (lang: Language) =>
         {
           id: 'door',
           title: 'Through the door',
-          text: 'Walk up to the wooden door. Click the prompt, or aim and press E, to open it and enter Writing. Enter is the shortcut.',
+          text: 'Walk up to the wooden door. Click the prompt, or aim and press E, to open it and enter the Web, starting with Writing. Enter is the shortcut.',
         },
         {
           id: 'suggestions',
@@ -113,4 +113,4 @@ export const studyLabel = (id: StudyPanel, lang: Language) =>
   })[id];
 
 export const doorLabel = (lang: Language) =>
-  lang === 'zh' ? '开门进入写作' : 'Open door to Writing';
+  lang === 'zh' ? '开门进入 Web' : 'Open door to Web';

@@ -1,3 +1,4 @@
+import { dismissRoomGuide } from './room-browser-guide.mjs';
 import { chromium } from '../work/browser-tools/node_modules/playwright/index.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -106,8 +107,7 @@ try {
     await page
       .getByRole('button', { name: 'Step into my room', exact: true })
       .click();
-    await page.getByRole('dialog', { name: 'README', exact: true }).waitFor();
-    await page.keyboard.press('Escape');
+    await dismissRoomGuide(page);
     await page.getByRole('button', { name: 'Drag', exact: true }).click();
     await page.getByRole('button', { name: 'World map', exact: true }).click();
     await page.waitForTimeout(1200);
@@ -137,10 +137,10 @@ try {
     }
     await page.waitForTimeout(600);
     await page
-      .getByRole('button', { name: /Open door to Writing/ })
+      .getByRole('button', { name: /Open door to Web/ })
       .waitFor({ timeout: 10000 });
     await page.screenshot({ path: `${out}/${size.name}-door.png` });
-    await page.getByRole('button', { name: /Open door to Writing/ }).click();
+    await page.getByRole('button', { name: /Open door to Web/ }).click();
     if (size.name === 'desktop') {
       await page.waitForFunction(
         () =>

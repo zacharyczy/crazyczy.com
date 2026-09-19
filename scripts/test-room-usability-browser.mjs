@@ -55,7 +55,7 @@ try {
     assert.equal(home.y, 2.7);
     const inside = await welcome.boundingBox();
     assert.equal(inside.x, initial.x);
-    assert.equal(inside.y, initial.y);
+    // The invitation sits between the dock and welcome while visible.
     const toolbar = await page.getByRole('toolbar').boundingBox();
     assert.ok(
       inside.y >= toolbar.y + toolbar.height + 8,
@@ -66,12 +66,11 @@ try {
       font,
     );
     await page.screenshot({ path: `${out}/${size.name}-room.png` });
-    await page.locator('.room-onboarding').waitFor();
+    await page.locator('.room-invitation').waitFor();
     const elapsed = Date.now() - entered;
-    assert.ok(
-      elapsed >= 2900 && elapsed < 4500,
-      `onboarding after three seconds: ${elapsed}`,
-    );
+    assert.equal(await page.getByRole('dialog').count(), 0, 'entry never forces a dialog');
+    await page.evaluate(() => document.exitPointerLock());
+    await page.locator('.room-manual-button').click();
     await page.getByRole('dialog').waitFor();
     assert.equal((await pose()).x, home.x);
     assert.equal((await pose()).z, home.z);
@@ -81,7 +80,7 @@ try {
       null,
       'README never moves camera to wall',
     );
-    await page.getByText(/You can read this guide again anytime/).waitFor();
+    await page.getByText(/Read this guide anytime/).waitFor();
     assert.equal(await welcome.isVisible(), false);
     assert.equal(
       await page.evaluate(() => !!document.pointerLockElement),
@@ -94,12 +93,13 @@ try {
     assert.equal((await pose()).x, home.x);
     assert.equal((await pose()).z, home.z);
     assert.ok(await welcome.isVisible());
+    if (await page.locator('.room-dock-toggle').getAttribute('aria-expanded') === 'false') await page.locator('.room-dock-toggle').click();
     await page.getByRole('button', { name: 'Drag', exact: true }).click();
     await page.waitForTimeout(2200);
     assert.equal(
       await page.getByRole('dialog').count(),
       0,
-      'guide opens only once automatically',
+      'manual stays closed until requested',
     );
     await page
       .getByRole('button', { name: 'Room controls', exact: true })
@@ -304,7 +304,7 @@ try {
       await page.screenshot({ path: `${out}/bookshelf.png` });
     }
     results.push(
-      `${size.name}: welcome below toolbar, rear-right standing position, stationary README after ${elapsed}ms and wall-guide access, hidden welcome during content, restored view, swept magnet blocking, GOAL reward and centre reset`,
+      `${size.name}: welcome below toolbar, rear-right standing position, invitation after ${elapsed}ms and manual access, hidden welcome during content, restored view, swept magnet blocking, GOAL reward and centre reset`,
     );
     console.log(results.at(-1));
     await ctx.close();

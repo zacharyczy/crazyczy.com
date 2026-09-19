@@ -10,8 +10,8 @@ export function RoomGuideContent({ lang }: { lang: Language }) {
       </h1>
       <p className="guide-reopen">
         {lang === 'zh'
-          ? '随时点击电视右侧墙上的便签，即可再次查看这份指南。先熟悉下面的操作，再开始探索吧。'
-          : 'You can read this guide again anytime: click the sticky notes on the wall to the right of the TV. Here is how to explore the room.'}
+          ? '随时点击操作栏的手册图标，或电视右侧墙上的便签，都能查看这份指南。操作栏可展开或收起。'
+          : 'Read this guide anytime using the manual icon in the dock, or the sticky notes to the right of the TV. Expand or collapse the dock whenever you like.'}
       </p>
       <div className="guide-grid">
         {roomGuide(lang).map((n) => (
