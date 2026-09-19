@@ -1,3 +1,5 @@
+'use client';
+import { useSiteLanguage, LanguageLink } from './site-language';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { Language } from '@/lib/content';
@@ -7,7 +9,7 @@ import { ThemeToggle } from './theme-toggle';
 import { SuggestionsPanel } from './suggestions-panel';
 
 export function SiteShell({
-  lang,
+  lang: initialLang,
   active,
   path,
   children,
@@ -17,6 +19,7 @@ export function SiteShell({
   path?: string;
   children: ReactNode;
 }) {
+  const { lang } = useSiteLanguage(initialLang);
   const t = copy[lang];
   const other = lang === 'zh' ? 'en' : 'zh';
   const otherHref = path
@@ -62,12 +65,13 @@ export function SiteShell({
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle lang={lang} />
-          <a
+          <LanguageLink
+            lang={other}
             href={otherHref}
             className="language-toggle inline-flex h-9 items-center gap-2 px-3.5 text-xs font-medium"
           >
             <span aria-hidden="true">文/A</span> {t.languageCode}
-          </a>
+          </LanguageLink>
         </div>
       </header>
       <nav

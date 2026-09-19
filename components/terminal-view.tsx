@@ -1,4 +1,5 @@
 'use client';
+import { useSiteLanguage } from './site-language';
 
 import { KeyboardEvent, useState } from 'react';
 import { pageHref } from '@/lib/routes';
@@ -9,7 +10,7 @@ type Line = { kind: 'command' | 'output' | 'error'; text: string };
 const ROUTES = ['home', 'blog', 'projects', 'games', 'about'] as const;
 
 export function TerminalView({
-  lang,
+  lang: initialLang,
   onNavigate,
   onLanguage,
 }: {
@@ -17,6 +18,7 @@ export function TerminalView({
   onNavigate?: (route: string) => void;
   onLanguage?: () => void;
 }) {
+  const { lang, setLanguage } = useSiteLanguage(initialLang);
   const [lines, setLines] = useState<Line[]>([
     {
       kind: 'output',
@@ -86,10 +88,7 @@ export function TerminalView({
       ]);
     } else if (name === 'lang') {
       if (onLanguage) onLanguage();
-      else
-        window.location.assign(
-          pageHref(lang === 'zh' ? 'en' : 'zh', 'terminal'),
-        );
+      else setLanguage(lang === 'zh' ? 'en' : 'zh');
     } else if (name === 'cd') {
       if (!argument) {
         setLines((current) => [

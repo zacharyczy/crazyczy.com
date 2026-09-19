@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  canApproachDoor,
   STANDING,
   CROUCHING,
   BOUNDS,
@@ -42,3 +43,8 @@ assert.equal(turnAngles(0, 0, 0, 10000, false).pitch, -1.22);
 console.log(
   'PASS: two eye heights, every furniture collider, wall bounds, normal mouse and inverse drag, pitch limits. Browser tests cover view stack and pointer lock.',
 );
+
+assert.equal(canApproachDoor(3.8, 0.7, 0, 1), true, 'table-side door approach beyond old 2.4 radius');
+assert.equal(canApproachDoor(0, 2.65, .7, .714), true, 'door-facing edge of the table');
+assert.equal(canApproachDoor(3.8, 0.7, 0, -1), false, 'no prompt facing away');
+assert.equal(canApproachDoor(3.8, .5, 0, 1), false, 'outside six-unit reach');

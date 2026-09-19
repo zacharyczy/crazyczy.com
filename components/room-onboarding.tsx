@@ -1,13 +1,16 @@
 'use client';
+import { LanguageButtons } from './site-language';
 import { useEffect, useRef } from 'react';
 import type { Language } from '@/lib/content';
 import { RoomGuideContent } from './room-guide-content';
 export function RoomOnboarding({
   lang,
   onClose,
+  onLanguage,
 }: {
   lang: Language;
   onClose: () => void;
+  onLanguage: (lang: Language) => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -32,6 +35,7 @@ export function RoomOnboarding({
       >
         ×
       </button>
+      <LanguageButtons lang={lang} onChange={onLanguage} />
       <RoomGuideContent lang={lang} />
       <button className="onboarding-start" onClick={onClose}>
         {lang === 'zh' ? '知道了，开始探索' : 'Got it — let’s explore'}

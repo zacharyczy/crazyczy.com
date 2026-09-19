@@ -1,10 +1,13 @@
+'use client';
+import { useSiteLanguage } from './site-language';
+import { gameCatalogue } from '@/lib/games';
 import { pageHref } from '@/lib/routes';
 import type { ReactNode } from 'react';
 import type { Language } from '@/lib/content';
 import { SiteShell } from './site-shell';
 
 export function GamePage({
-  lang,
+  lang: initialLang,
   slug,
   title,
   description,
@@ -16,6 +19,8 @@ export function GamePage({
   description: string;
   children: ReactNode;
 }) {
+  const { lang } = useSiteLanguage(initialLang);
+  const game = gameCatalogue(lang).find(g => g.slug === slug);
   return (
     <SiteShell lang={lang} active="games" path={`games/${slug}`}>
       <section className="article-wrap game-page">
@@ -24,8 +29,8 @@ export function GamePage({
         </a>
         <header className="game-page-header">
           <p className="eyebrow">Games / {slug}</p>
-          <h1>{title}</h1>
-          <p>{description}</p>
+          <h1>{game?.title ?? title}</h1>
+          <p>{game?.description ?? description}</p>
         </header>
         {children}
       </section>

@@ -1,4 +1,5 @@
 'use client';
+import { canApproachDoor } from './room-physics';
 import { useContext, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -31,10 +32,7 @@ export function RoomDoor({
 }) {
   const { enabled, reducedMotion } = useContext(InteractionContext);
   const near = useRef(false);
-  const vectors = useMemo(
-    () => ({ direction: new THREE.Vector3(), toward: new THREE.Vector3() }),
-    [],
-  );
+  const vectors = useMemo(() => ({ direction: new THREE.Vector3() }), []);
   const preview = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 640;
@@ -93,12 +91,15 @@ export function RoomDoor({
   }, [lang]);
   useEffect(() => () => preview.dispose(), [preview]);
   useFrame(({ camera, gl }) => {
-    vectors.toward.set(3.8, camera.position.y, 6.56).sub(camera.position);
     camera.getWorldDirection(vectors.direction);
     const next =
       enabled &&
-      vectors.toward.length() < 2.4 &&
-      vectors.toward.normalize().dot(vectors.direction) > 0.25;
+      canApproachDoor(
+        camera.position.x,
+        camera.position.z,
+        vectors.direction.x,
+        vectors.direction.z,
+      );
     if (next !== near.current) {
       near.current = next;
       onNear(next);

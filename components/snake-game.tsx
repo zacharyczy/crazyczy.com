@@ -1,4 +1,5 @@
 'use client';
+import { useSiteLanguage } from './site-language';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,8 @@ function makeFood(occupied: Point[]): Point {
   return open[Math.floor(Math.random() * open.length)] || { x: 4, y: 4 };
 }
 
-export function SnakeGame({ lang, presentation = 'page', inputEnabled = true }: GamePresentation) {
+export function SnakeGame({ lang: initialLang, presentation = 'page', inputEnabled = true }: GamePresentation) {
+  const { lang } = useSiteLanguage(initialLang);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const directionRef = useRef<Direction>({ x: 1, y: 0 });
   const queuedRef = useRef<Direction>({ x: 1, y: 0 });

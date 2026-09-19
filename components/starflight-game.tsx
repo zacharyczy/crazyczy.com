@@ -1,4 +1,5 @@
 'use client';
+import { useSiteLanguage } from './site-language';
 
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,8 @@ type Obstacle = { x: number; y: number; width: number; height: number };
 const WIDTH = 360;
 const HEIGHT = 520;
 
-export function StarflightGame({ lang, presentation = 'page', inputEnabled = true }: GamePresentation) {
+export function StarflightGame({ lang: initialLang, presentation = 'page', inputEnabled = true }: GamePresentation) {
+  const { lang } = useSiteLanguage(initialLang);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const playerRef = useRef({ x: WIDTH / 2 - 14, y: HEIGHT - 58, width: 28, height: 32 });
   const obstaclesRef = useRef<Obstacle[]>([]);

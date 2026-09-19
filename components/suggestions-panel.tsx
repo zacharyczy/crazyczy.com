@@ -1,7 +1,8 @@
 'use client';
+import { useSiteLanguage, LanguageButtons } from './site-language';
 
 import { Send, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Language } from '@/lib/content';
 import {
   Sheet,
@@ -59,7 +60,7 @@ function visitorId() {
 }
 
 export function SuggestionsPanel({
-  lang,
+  lang: initialLang,
   mobile = false,
   embedded = false,
 }: {
@@ -67,6 +68,7 @@ export function SuggestionsPanel({
   mobile?: boolean;
   embedded?: boolean;
 }) {
+  const { lang, setLanguage } = useSiteLanguage(initialLang);
   const t = TEXT[lang];
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -75,6 +77,8 @@ export function SuggestionsPanel({
   const [notes, setNotes] = useState<Note[]>([]);
   const [status, setStatus] = useState('');
 
+  const unavailable = useRef(t.unavailable);
+  useEffect(() => { unavailable.current = t.unavailable; }, [t.unavailable]);
   const loadNotes = useCallback(async () => {
     setLoading(true);
     setStatus('');
@@ -84,9 +88,9 @@ export function SuggestionsPanel({
         return response.json() as Promise<Note[]>;
       })
       .then(setNotes)
-      .catch(() => setStatus(t.unavailable))
+      .catch(() => setStatus(unavailable.current))
       .finally(() => setLoading(false));
-  }, [t.unavailable]);
+  }, []);
 
   useEffect(() => {
     if (!embedded) return;
@@ -245,6 +249,7 @@ export function SuggestionsPanel({
       <SheetContent className="suggestions-drawer sm:max-w-[36rem]">
         <p className="drawer-kicker">{t.kicker}</p>
         <SheetTitle className="drawer-title">{t.title}</SheetTitle>
+        <LanguageButtons lang={lang} onChange={setLanguage} />
         <SheetDescription className="drawer-description">
           {t.description}
         </SheetDescription>

@@ -37,3 +37,20 @@ export function turnAngles(
     pitch: Math.max(-1.22, Math.min(1.43, pitch + dy * 0.0025 * sign)),
   };
 }
+
+export const DOOR_REACH = 6;
+export function canApproachDoor(
+  x: number,
+  z: number,
+  directionX: number,
+  directionZ: number,
+) {
+  const dx = 3.8 - x,
+    dz = 6.56 - z,
+    distance = Math.hypot(dx, dz);
+  return (
+    distance > 0 &&
+    distance < DOOR_REACH &&
+    (dx * directionX + dz * directionZ) / distance > 0.25
+  );
+}

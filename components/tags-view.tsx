@@ -1,10 +1,13 @@
+'use client';
+import { useSiteLanguage } from './site-language';
 import { pageHref } from '@/lib/routes';
 import type { Language } from '@/lib/content';
 import { getPosts, getTags } from '@/lib/content';
 import { copy } from '@/lib/copy';
 import { SiteShell } from './site-shell';
 
-export function TagsView({ lang }: { lang: Language }) {
+export function TagsView({ lang: initialLang }: { lang: Language }) {
+  const { lang } = useSiteLanguage(initialLang);
   const tags = getTags(lang);
   return (
     <SiteShell lang={lang} path="tags">

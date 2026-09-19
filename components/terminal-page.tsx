@@ -1,8 +1,11 @@
+'use client';
+import { useSiteLanguage } from './site-language';
 import type { Language } from '@/lib/content';
 import { SiteShell } from './site-shell';
 import { TerminalView } from './terminal-view';
 
-export function TerminalPage({ lang }: { lang: Language }) {
+export function TerminalPage({ lang: initialLang }: { lang: Language }) {
+  const { lang } = useSiteLanguage(initialLang);
   return (
     <SiteShell lang={lang} active="terminal" path="terminal">
       <section className="page-wrap terminal-page">

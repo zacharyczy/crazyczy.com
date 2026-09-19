@@ -1,4 +1,5 @@
 'use client';
+import { LanguageButtons, useSiteLanguage } from './site-language';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Html, RoundedBox } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
@@ -29,7 +30,7 @@ function Speaker({ x }: { x: number }) {
   </group>;
 }
 
-function TelevisionUI({ lang, game, onGame, onClose, ready }: { lang: Language; game: GameId | null; onGame: (game: GameId | null) => void; onClose: () => void; ready: boolean }) {
+function TelevisionUI({ lang, game, onGame, onClose, ready, onLanguage }: { onLanguage: (lang: Language) => void; lang: Language; game: GameId | null; onGame: (game: GameId | null) => void; onClose: () => void; ready: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!ready) return;
@@ -47,7 +48,7 @@ function TelevisionUI({ lang, game, onGame, onClose, ready }: { lang: Language; 
   }, [ready, game]);
   return <section ref={root} className="tv-screen-ui" aria-label={lang === 'zh' ? '电视游戏机' : 'Television arcade'} inert={!ready}
     onPointerDown={e=>e.stopPropagation()} onPointerMove={e=>e.stopPropagation()} onPointerUp={e=>e.stopPropagation()} onWheel={e=>e.stopPropagation()}>
-    <header><span>CRAZY / PLAY</span><button onClick={game ? ()=>onGame(null) : onClose}>{game ? (lang==='zh' ? '← 菜单' : '← Menu') : (lang==='zh' ? '关机' : 'Power off')}</button></header>
+    <header><span>CRAZY / PLAY</span><LanguageButtons lang={lang} onChange={onLanguage} /><button onClick={game ? ()=>onGame(null) : onClose}>{game ? (lang==='zh' ? '← 菜单' : '← Menu') : (lang==='zh' ? '关机' : 'Power off')}</button></header>
     {game ? <Suspense fallback={<div className="tv-loading">{lang==='zh'?'载入游戏…':'Loading…'}</div>}>
       {game==='snake' ? <Snake lang={lang} presentation="tv" inputEnabled={ready} /> : <Starflight lang={lang} presentation="tv" inputEnabled={ready} />}
     </Suspense> : <div className="tv-menu">
@@ -58,6 +59,7 @@ function TelevisionUI({ lang, game, onGame, onClose, ready }: { lang: Language; 
   </section>;
 }
 export function RoomTelevision({ active, ready, game, lang, reducedMotion, onGame, onClose }: { active: boolean; ready: boolean; game: GameId | null; lang: Language; reducedMotion: boolean; onGame: (game: GameId | null)=>void; onClose: ()=>void }) {
+  const { setLanguage } = useSiteLanguage(lang);
   const maps=usePixelMaterials();
   const [showScreen, setShowScreen] = useState(active);
   useEffect(() => {
@@ -98,7 +100,7 @@ export function RoomTelevision({ active, ready, game, lang, reducedMotion, onGam
     <pointLight ref={light} position={[0,1.52,1.02]} color="#a7d3b6" intensity={0} distance={3.1} decay={2} />
     {showScreen && <Html transform position={[0,1.99,.54]} distanceFactor={1.04} zIndexRange={[6,5]} style={{pointerEvents:ready ? 'auto' : 'none'}}>
       <div className="tv-power-surface" data-powered={active} style={{opacity:active ? 1 : 0}}>
-        <TelevisionUI lang={lang} game={active ? game : null} onGame={onGame} onClose={onClose} ready={ready && active} />
+        <TelevisionUI onLanguage={setLanguage} lang={lang} game={active ? game : null} onGame={onGame} onClose={onClose} ready={ready && active} />
       </div>
     </Html>}
   </group>;

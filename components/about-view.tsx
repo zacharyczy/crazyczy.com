@@ -1,3 +1,5 @@
+'use client';
+import { useSiteLanguage } from './site-language';
 import type { Language } from '@/lib/content';
 import { copy } from '@/lib/copy';
 import { SiteShell } from './site-shell';
@@ -44,7 +46,8 @@ export function AboutContent({ lang }: { lang: Language }) {
   );
 }
 
-export function AboutView({ lang }: { lang: Language }) {
+export function AboutView({ lang: initialLang }: { lang: Language }) {
+  const { lang } = useSiteLanguage(initialLang);
   return (
     <SiteShell lang={lang} active="about">
       <AboutContent lang={lang} />

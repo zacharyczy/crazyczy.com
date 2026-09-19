@@ -1,3 +1,5 @@
+'use client';
+import { useSiteLanguage, LanguageLink } from './site-language';
 import { pageHref } from '@/lib/routes';
 import { notFound } from 'next/navigation';
 import type { Language } from '@/lib/content';
@@ -6,8 +8,17 @@ import { copy } from '@/lib/copy';
 import { Markdown } from './markdown';
 import { SiteShell } from './site-shell';
 
-export function ArticleView({ lang, slug }: { lang: Language; slug: string }) {
-  const post = getPost(lang, slug);
+export function ArticleView({
+  lang: initialLang,
+  slug,
+}: {
+  lang: Language;
+  slug: string;
+}) {
+  const { lang } = useSiteLanguage(initialLang);
+  const original = getPost(initialLang, slug);
+  const post =
+    original?.lang === lang ? original : original && getTranslation(original);
   if (!post) notFound();
   const translation = getTranslation(post);
   const t = copy[lang];
@@ -55,12 +66,13 @@ export function ArticleView({ lang, slug }: { lang: Language; slug: string }) {
               </a>
             ))}
             {translation && (
-              <a
+              <LanguageLink
+                lang={translation.lang}
                 href={pageHref(translation.lang, `blog/${translation.slug}`)}
                 className="ml-auto text-xs text-cyan-300 hover:text-cyan-200"
               >
                 {translation.lang === 'zh' ? '阅读中文版' : 'Read in English'} ↗
-              </a>
+              </LanguageLink>
             )}
           </div>
         </header>

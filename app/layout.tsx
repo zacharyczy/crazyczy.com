@@ -1,3 +1,4 @@
+import { SiteLanguageProvider } from '@/components/site-language';
 import { headers } from 'next/headers';
 import type { Metadata } from 'next';
 import './globals.css';
@@ -56,7 +57,13 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <SiteLanguageProvider
+          initialLanguage={language === 'zh-CN' ? 'zh' : 'en'}
+        >
+          {children}
+        </SiteLanguageProvider>
+      </body>
     </html>
   );
 }

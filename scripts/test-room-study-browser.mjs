@@ -250,7 +250,7 @@ try {
     await page.screenshot({ path: `${out}/${size.name}-terminal.png` });
     await page.keyboard.press('Escape');
     await dialog.waitFor({ state: 'hidden' });
-    dialog = await open('阅读文稿');
+    dialog = await open('Read writing');
     await dialog.getByRole('button', { name: '中文', exact: true }).click();
     await dialog.locator('.writing-row').first().click();
     await dialog.getByRole('button', { name: '← 返回目录' }).waitFor();

@@ -1,4 +1,5 @@
 'use client';
+import { useSiteLanguage, LanguageButtons } from './site-language';
 import { parseSitePath } from '@/lib/routes';
 import { RoomGuideContent } from './room-guide-content';
 import { useEffect, useRef, useState } from 'react';
@@ -34,7 +35,11 @@ function Reader({
   slug: string | null;
   setSlug: (slug: string | null) => void;
 }) {
-  const post = slug ? getPost(lang, slug) : undefined;
+  const source = slug
+    ? (getPost(lang, slug) ?? getPost(lang === 'en' ? 'zh' : 'en', slug))
+    : undefined;
+  const post =
+    source?.lang === lang ? source : source && getTranslation(source);
   const [tag, setTag] = useState<string | null>(null);
   const posts = getPosts(lang).filter((p) => !tag || p.tags.includes(tag));
   return (
@@ -100,8 +105,8 @@ export default function RoomStudyContent({
   onTV,
   onOpen,
 }: Props) {
-  const [language, setLanguage] = useState(lang),
-    [windowName, setWindow] = useState('projects'),
+  const { lang: language, setLanguage } = useSiteLanguage(lang);
+  const [windowName, setWindow] = useState('projects'),
     [terminal, setTerminal] = useState(false),
     [slug, setSlug] = useState<string | null>(null),
     [computerSlug, setComputerSlug] = useState<string | null>(null);
@@ -131,10 +136,6 @@ export default function RoomStudyContent({
     q.addEventListener('change', update);
     return () => q.removeEventListener('change', update);
   }, []);
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setLanguage(lang));
-    return () => cancelAnimationFrame(frame);
-  }, [lang]);
   useEffect(() => {
     if (!panel || !ready) return;
     const controls = () =>
@@ -211,9 +212,7 @@ export default function RoomStudyContent({
             : studyLabel(active, language)}
         </span>
         <div>
-          <button onClick={() => setLanguage(language === 'zh' ? 'en' : 'zh')}>
-            {language === 'zh' ? 'EN' : '中文'}
-          </button>
+          <LanguageButtons lang={language} onChange={setLanguage} />
           <button
             aria-label={
               language === 'zh' ? '关闭并返回房间' : 'Close and return'

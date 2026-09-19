@@ -682,3 +682,21 @@
  .room-invitation { padding:8px 10px; font-size:12px; }
 }
 @media(prefers-reduced-motion:reduce) { .room-invitation { animation:none; } }
+
+/* Keep the exact invitation on one line, including small 320px phones. */
+.room-invitation { width:min(420px,calc(100vw - 20px)); padding:10px; gap:6px; font-size:clamp(11px,3.1vw,14px); }
+.room-invitation p { white-space:nowrap; }
+.room-invitation button { width:24px; height:24px; }
+.manual-language { display:inline-flex; align-items:center; gap:4px; }
+.manual-language button { min-width:44px; min-height:36px; padding:4px 9px; border:1px solid currentColor; border-radius:3px; cursor:pointer; }
+.manual-language button[aria-pressed=true] { background:#43634f; color:#fff7df; }
+.room-onboarding > .manual-language { margin:0 40px 14px 0; }
+.study-titlebar > div { display:flex; align-items:center; gap:6px; }
+.manual-language button:focus-visible { outline:2px solid #c69233; outline-offset:2px; }
+
+.manual-language { border:0; padding:0; margin:0; min-width:0; }
+.room-onboarding > .manual-language { margin:0 40px 14px 0; }
+
+.room-onboarding > .manual-language { position:sticky; top:0; z-index:2; background:#eee1bd; box-shadow:0 4px 0 #eee1bd; }
+
+.room-onboarding > .manual-language { display:flex; width:100%; padding:6px 0; margin-right:0; }

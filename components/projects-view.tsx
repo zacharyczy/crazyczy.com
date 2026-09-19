@@ -1,10 +1,13 @@
+'use client';
+import { useSiteLanguage } from './site-language';
 import { pageHref } from '@/lib/routes';
 import type { Language } from '@/lib/content';
 import { copy } from '@/lib/copy';
 import { projects } from '@/lib/projects';
 import { SiteShell } from './site-shell';
 
-export function ProjectsView({ lang }: { lang: Language }) {
+export function ProjectsView({ lang: initialLang }: { lang: Language }) {
+  const { lang } = useSiteLanguage(initialLang);
   const t = copy[lang];
   return (
     <SiteShell lang={lang} active="projects">

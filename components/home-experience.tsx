@@ -1,4 +1,5 @@
 'use client';
+import { useSiteLanguage, LanguageLink } from './site-language';
 
 import { pageHref } from '@/lib/routes';
 
@@ -719,7 +720,8 @@ function SceneReady({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-export function HomeExperience({ lang }: { lang: Language }) {
+export function HomeExperience({ lang: initialLang }: { lang: Language }) {
+  const { lang, setLanguage } = useSiteLanguage(initialLang);
   const visitor = useVisitorLocation();
   const [jumpId, setJumpId] = useState(0);
   const [doorStage, setDoorStage] = useState<'approach' | 'opening' | null>(
@@ -1033,6 +1035,7 @@ export function HomeExperience({ lang }: { lang: Language }) {
       {onboarding && (
         <RoomOnboarding
           lang={lang}
+          onLanguage={setLanguage}
           onClose={() => {
             setOnboarding(false);
             clearMovement();
@@ -1139,10 +1142,13 @@ export function HomeExperience({ lang }: { lang: Language }) {
         </h1>
       </div>
       {!panel && !tv && (
-        <a className="room-language" href={lang === 'en' ? '/zh/' : '/'}>
+        <LanguageLink
+          className="room-language"
+          lang={lang === 'en' ? 'zh' : 'en'}
+        >
           <Globe2 />
           {lang === 'en' ? '中文' : 'EN'}
-        </a>
+        </LanguageLink>
       )}
       {ready && !tv && !panel && !doorStage && (
         <>
@@ -1297,8 +1303,8 @@ export function HomeExperience({ lang }: { lang: Language }) {
               </span>
               <p>
                 {lang === 'zh'
-                  ? '你可以自由探索，也可以阅读这里的手册。'
-                  : 'Feel free to explore, or read the room manual here.'}
+                  ? '自由探索, 或查阅手册'
+                  : 'explore freely, or refer to the manual'}
               </p>
               <button
                 aria-label={lang === 'zh' ? '收起提示' : 'Dismiss tip'}

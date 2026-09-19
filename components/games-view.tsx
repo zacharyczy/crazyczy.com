@@ -1,3 +1,5 @@
+'use client';
+import { useSiteLanguage } from './site-language';
 import { pageHref } from '@/lib/routes';
 import { gameCatalogue } from '@/lib/games';
 import type { Language } from '@/lib/content';
@@ -5,7 +7,8 @@ import { copy } from '@/lib/copy';
 import { GameBest } from './game-best';
 import { SiteShell } from './site-shell';
 
-export function GamesView({ lang }: { lang: Language }) {
+export function GamesView({ lang: initialLang }: { lang: Language }) {
+  const { lang } = useSiteLanguage(initialLang);
   const t = copy[lang];
   const games = gameCatalogue(lang);
 
