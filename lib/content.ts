@@ -10,6 +10,10 @@ import zhCompiler from '@/content/posts/zh/compiler.md?raw';
 import zhCrazyczy from '@/content/posts/zh/crazyczy.md?raw';
 import zhGentzen from '@/content/posts/zh/gentzen.md?raw';
 import zhHello from '@/content/posts/zh/hello-world.md?raw';
+import enFocus from '@/content/essays/en/focus-takes-root-in-output.md?raw';
+import zhFocus from '@/content/essays/zh/focus-takes-root-in-output.md?raw';
+import enApology from '@/content/poems/en/apology.md?raw';
+import zhApology from '@/content/poems/zh/apology.md?raw';
 
 export type Language = 'zh' | 'en';
 
@@ -73,6 +77,10 @@ function parsePost(slug: string, raw: string): Post {
 }
 
 const allPosts = [
+  parsePost('focus-takes-root-in-output', enFocus),
+  parsePost('focus-takes-root-in-output', zhFocus),
+  parsePost('apology', enApology),
+  parsePost('apology', zhApology),
   parsePost('no-pink-elephant', enElephant),
   parsePost('no-pink-elephant', zhElephant),
   parsePost('ppt-to-chinese', enPpt),

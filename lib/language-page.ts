@@ -23,6 +23,7 @@ export function languagePage(path: string, lang: Language) {
       projects: ['Projects', '项目'],
       about: ['About', '关于'],
       tags: ['Tags', '标签'],
+      suggestions: ['Suggestions', '建议'],
       games: ['Games', '游戏'],
       terminal: ['Terminal', '终端'],
     };

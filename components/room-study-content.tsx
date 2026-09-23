@@ -9,6 +9,7 @@ import { getPost, getPosts, getTranslation } from '@/lib/content';
 import { projects } from '@/lib/projects';
 import { WritingIndex } from './writing-index';
 import { Markdown } from './markdown';
+import { WritingFeedback } from './writing-feedback';
 import { TerminalView } from './terminal-view';
 import { AboutContent } from './about-view';
 import { SuggestionsPanel } from './suggestions-panel';
@@ -86,7 +87,8 @@ function Reader({
               </button>
             )}
           </div>
-          <Markdown source={post.body} />
+          <Markdown source={post.body} poem={post.tags.some((tag) => ['Poem', 'Poetry', '诗歌'].includes(tag))} />
+          <WritingFeedback key={`${post.lang}:${post.slug}`} lang={post.lang} slug={post.slug} />
         </article>
       ) : (
         <>

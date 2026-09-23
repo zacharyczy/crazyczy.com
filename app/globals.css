@@ -632,3 +632,27 @@
 }
 
 @media (pointer: coarse) and (max-height: 500px) { .room-jump-touch { bottom: 104px; } }
+
+.poem-text p { white-space: pre-line; line-height: 2.1; }
+.suggestions-page { max-width: 36rem; }
+.suggestions-page > p:first-child { color: var(--primary); font-family: var(--font-mono); font-size: .75rem; letter-spacing: .12em; }
+.suggestions-page > h2 { margin-top: 1rem; color: var(--strong); font-size: clamp(2rem, 5vw, 3rem); line-height: 1.15; }
+.suggestions-page > p:nth-child(3) { margin-top: 1rem; color: var(--dim); line-height: 1.7; }
+.writing-feedback { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem; font-family: var(--font-sans), sans-serif; }
+.writing-feedback-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+.writing-feedback-head h2 { color: var(--strong); font-size: 1.5rem; }
+.writing-like { display: inline-flex; min-height: 2.5rem; align-items: center; gap: .5rem; border: 1px solid var(--border); border-radius: .2rem; padding: .45rem .75rem; background: var(--surface-soft); color: var(--foreground); font-size: .85rem; }
+.writing-like svg { width: 1rem; height: 1rem; }
+.writing-like:hover:not(:disabled), .writing-feedback .visitor-notes button:hover:not(:disabled) { border-color: var(--cyan); color: var(--cyan); }
+.writing-like:disabled, .writing-feedback .visitor-notes button:disabled { cursor: default; opacity: .65; }
+.writing-like strong { color: var(--primary); }
+.writing-feedback-status { color: var(--dim); font-size: .875rem; line-height: 1.5; }
+.writing-feedback .visitor-notes article > header { gap: 1rem; }
+.writing-feedback .visitor-notes article > header time { color: var(--faint); }
+.writing-feedback .visitor-notes article > p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.writing-feedback .visitor-notes article > footer button { min-width: 2.2rem; min-height: 2.2rem; }
+.room-reader .writing-feedback { margin-top: 2rem; border-top-color: #988b6755; }
+.room-reader .writing-feedback-head h2, .room-reader .writing-feedback .visitor-notes article > p { color: #34392c; }
+.room-reader .writing-feedback .note-composer, .room-reader .writing-like, .room-reader .writing-feedback .visitor-notes article { border-color: #b5a17a; background: #e6d5ab; color: #3f4537; }
+.room-reader .writing-feedback .note-composer textarea { color: #34392c; }
+.room-reader .writing-feedback .visitor-notes article { padding: 1rem; margin-top: .75rem; }

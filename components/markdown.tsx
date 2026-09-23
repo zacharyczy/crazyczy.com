@@ -1,9 +1,13 @@
 import { Fragment, type ReactNode } from 'react';
 
 function inline(text: string): ReactNode[] {
-  return text.split(/(`[^`]+`|\[[^\]]+\]\([^)]+\))/g).map((part, index) =>
+  return text.split(/(`[^`]+`|\[[^\]]+\]\([^)]+\)|\*\*[^*]+\*\*|~~[^~]+~~)/g).map((part, index) =>
     part.startsWith('`') && part.endsWith('`') ? (
       <code key={index}>{part.slice(1, -1)}</code>
+    ) : part.startsWith('**') && part.endsWith('**') ? (
+      <strong key={index}>{part.slice(2, -2)}</strong>
+    ) : part.startsWith('~~') && part.endsWith('~~') ? (
+      <del key={index}>{part.slice(2, -2)}</del>
     ) : (
       (() => {
         const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
@@ -24,7 +28,12 @@ function inline(text: string): ReactNode[] {
   );
 }
 
-export function Markdown({ source }: { source: string }) {
+export function Markdown({ source, poem = false }: { source: string; poem?: boolean }) {
+  if (poem) {
+    return <div className="prose-tech poem-text">{source.trim().split(/\r?\n\s*\r?\n/).map((stanza, index) => (
+      <p key={index}>{stanza.trim()}</p>
+    ))}</div>;
+  }
   const lines = source.split(/\r?\n/);
   const nodes: ReactNode[] = [];
   let code: string[] | null = null;

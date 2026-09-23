@@ -63,10 +63,12 @@ export function SuggestionsPanel({
   lang: initialLang,
   mobile = false,
   embedded = false,
+  standalone = false,
 }: {
   lang: Language;
   mobile?: boolean;
   embedded?: boolean;
+  standalone?: boolean;
 }) {
   const { lang, setLanguage } = useSiteLanguage(initialLang);
   const t = TEXT[lang];
@@ -93,10 +95,10 @@ export function SuggestionsPanel({
   }, []);
 
   useEffect(() => {
-    if (!embedded) return;
+    if (!embedded && !standalone) return;
     const frame = requestAnimationFrame(() => void loadNotes());
     return () => cancelAnimationFrame(frame);
-  }, [embedded, loadNotes]);
+  }, [embedded, standalone, loadNotes]);
 
   function changeOpen(next: boolean) {
     setOpen(next);
@@ -218,9 +220,9 @@ export function SuggestionsPanel({
       </div>
     </>
   );
-  if (embedded)
+  if (embedded || standalone)
     return (
-      <section className="room-guestbook">
+      <section className={standalone ? 'suggestions-page' : 'room-guestbook'}>
         <p>{t.kicker}</p>
         <h2>{t.title}</h2>
         <p>{t.description}</p>

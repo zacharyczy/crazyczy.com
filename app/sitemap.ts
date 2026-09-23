@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     'terminal',
     'about',
     'tags',
+    'suggestions',
   ];
   const entry = (lang: Language, path: string, date: string) => ({
     url: base + pageHref(lang, path),

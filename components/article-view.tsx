@@ -6,6 +6,7 @@ import type { Language } from '@/lib/content';
 import { getPost, getTranslation } from '@/lib/content';
 import { copy } from '@/lib/copy';
 import { Markdown } from './markdown';
+import { WritingFeedback } from './writing-feedback';
 import { SiteShell } from './site-shell';
 
 export function ArticleView({
@@ -76,7 +77,8 @@ export function ArticleView({
             )}
           </div>
         </header>
-        <Markdown source={post.body} />
+        <Markdown source={post.body} poem={post.tags.some((tag) => ['Poem', 'Poetry', '诗歌'].includes(tag))} />
+        <WritingFeedback key={`${post.lang}:${post.slug}`} lang={post.lang} slug={post.slug} />
       </article>
       <script
         type="application/ld+json"

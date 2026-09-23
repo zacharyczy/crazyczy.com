@@ -33,9 +33,9 @@ npm run build
 
 ## Writing
 
-Posts live in `content/posts/zh` and `content/posts/en`. Each translation pair shares a `translationKey`, while either language can be published independently.
+Articles live in `content/posts/{en,zh}`, essays in `content/essays/{en,zh}`, and poems in `content/poems/{en,zh}`. Each translation pair shares a `translationKey`, while either language can be published independently.
 
-The site currently uses explicit article route files under `app/blog/<slug>/page.tsx` (English) and `app/blog/<slug>/zh/page.tsx` (Chinese). Add the matching route when adding a new post.
+The site currently uses explicit article route files under `app/blog/<slug>/page.tsx` (English) and `app/blog/<slug>/zh/page.tsx` (Chinese). Add the matching route and register each Markdown file in `lib/content.ts` when adding a new piece. Writing likes and comments share Cloudflare D1 data; visitors may like each item once and comment twice per UTC day across Writing. The guestbook is also available at `/suggestions/`.
 
 ## Deployment
 
