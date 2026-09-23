@@ -14,6 +14,10 @@ import enFocus from '@/content/essays/en/focus-takes-root-in-output.md?raw';
 import zhFocus from '@/content/essays/zh/focus-takes-root-in-output.md?raw';
 import enApology from '@/content/poems/en/apology.md?raw';
 import zhApology from '@/content/poems/zh/apology.md?raw';
+import enMiser from '@/content/posts/en/miser.md?raw';
+import zhMiser from '@/content/posts/zh/miser.md?raw';
+import enLifeline from '@/content/posts/en/lifeline.md?raw';
+import zhLifeline from '@/content/posts/zh/lifeline.md?raw';
 
 export type Language = 'zh' | 'en';
 
@@ -77,6 +81,10 @@ function parsePost(slug: string, raw: string): Post {
 }
 
 const allPosts = [
+  parsePost('miser', enMiser),
+  parsePost('miser', zhMiser),
+  parsePost('lifeline', enLifeline),
+  parsePost('lifeline', zhLifeline),
   parsePost('focus-takes-root-in-output', enFocus),
   parsePost('focus-takes-root-in-output', zhFocus),
   parsePost('apology', enApology),

@@ -28,6 +28,13 @@ function inline(text: string): ReactNode[] {
   );
 }
 
+function joinSoftLines(lines: string[]) {
+  return lines.reduce((joined, line, index) => {
+    if (index === 0) return line;
+    return joined + (/^[\u3400-\u9fff]/u.test(line) ? '' : ' ') + line;
+  }, '');
+}
+
 export function Markdown({ source, poem = false }: { source: string; poem?: boolean }) {
   if (poem) {
     return <div className="prose-tech poem-text">{source.trim().split(/\r?\n\s*\r?\n/).map((stanza, index) => (
@@ -37,8 +44,16 @@ export function Markdown({ source, poem = false }: { source: string; poem?: bool
   const lines = source.split(/\r?\n/);
   const nodes: ReactNode[] = [];
   let code: string[] | null = null;
+  let paragraph: string[] = [];
+  let paragraphStart = 0;
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    nodes.push(<p key={paragraphStart}>{inline(joinSoftLines(paragraph))}</p>);
+    paragraph = [];
+  };
   lines.forEach((line, index) => {
     if (line.startsWith('```')) {
+      flushParagraph();
       if (code) {
         nodes.push(
           <pre key={`code-${index}`}>
@@ -53,11 +68,21 @@ export function Markdown({ source, poem = false }: { source: string; poem?: bool
       code.push(line);
       return;
     }
-    if (line.startsWith('## '))
+    if (!line.trim()) {
+      flushParagraph();
+      return;
+    }
+    if (line.startsWith('## ')) {
+      flushParagraph();
       nodes.push(<h2 key={index}>{inline(line.slice(3))}</h2>);
-    else if (line.startsWith('- '))
+    } else if (line.startsWith('- ')) {
+      flushParagraph();
       nodes.push(<li key={index}>{inline(line.slice(2))}</li>);
-    else if (line.trim()) nodes.push(<p key={index}>{inline(line)}</p>);
+    } else {
+      if (!paragraph.length) paragraphStart = index;
+      paragraph.push(line.trim());
+    }
   });
+  flushParagraph();
   return <div className="prose-tech">{nodes}</div>;
 }

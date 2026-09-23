@@ -5,6 +5,24 @@ export const projects = {
     {
       year: '2026',
       status: '新项目',
+      title: 'miser',
+      description: '在用户要求多模型协作时，帮助 Codex 主代理判断何时委派边界清楚的独立子任务。',
+      stack: ['Agent Skill', 'Codex', 'AI'],
+      repository: 'https://github.com/zacharyczy/miser',
+      articleSlug: 'miser',
+    },
+    {
+      year: '2026',
+      status: '新项目',
+      title: 'Lifeline',
+      description: 'Windows 置顶悬浮窗，以两条进度条显示 Codex 五小时和七天额度的剩余百分比。',
+      stack: ['Python', 'Tkinter', 'Codex'],
+      repository: 'https://github.com/zacharyczy/Lifeline',
+      articleSlug: 'lifeline',
+    },
+    {
+      year: '2026',
+      status: '新项目',
       title: 'no-pink-elephant',
       description:
         '让模型在代码、文章、注释及回复中自然遵守用户负向要求，减少不必要的约束确认和禁止内容复述。',
@@ -52,6 +70,24 @@ export const projects = {
     },
   ],
   en: [
+    {
+      year: '2026',
+      status: 'New',
+      title: 'miser',
+      description: 'A Codex skill for assigning bounded, independent subtasks when multi-model collaboration is requested.',
+      stack: ['Agent Skill', 'Codex', 'AI'],
+      repository: 'https://github.com/zacharyczy/miser',
+      articleSlug: 'miser',
+    },
+    {
+      year: '2026',
+      status: 'New',
+      title: 'Lifeline',
+      description: 'A floating Windows utility showing remaining Codex five-hour and seven-day usage percentages.',
+      stack: ['Python', 'Tkinter', 'Codex'],
+      repository: 'https://github.com/zacharyczy/Lifeline',
+      articleSlug: 'lifeline',
+    },
     {
       year: '2026',
       status: 'New',
